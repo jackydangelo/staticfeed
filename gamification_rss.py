@@ -1,11 +1,11 @@
 import feedparser
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
+from zoneinfo import ZoneInfo
 
 SOURCE_RSS = [
     "https://news.google.com/rss/search?q=gamification",
-    "https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it",
-    "https://hnrss.org/newest?q=gamification"
+    "https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it"
 ]
 
 all_entries = []
@@ -121,7 +121,7 @@ h1 {{
 
 <h1>🎮 Gamification News</h1>
 
-<p>Ultimo aggiornamento: {datetime.now().strftime("%d/%m/%Y %H:%M")}</p>
+<p>Ultimo aggiornamento: {datetime.now().astimezone(ZoneInfo("Europe/Rome")).strftime("%d/%m/%Y %H:%M")}</p>
 """
 
 for article in all_entries:
@@ -147,7 +147,7 @@ for article in all_entries:
 
 html += """
 <div class="footer">
-Feed aggregato automaticamente con Python.
+Feed per temi di gamification. Parte del progetto "Questa è gamification!" di Giacomo D'angelo.
 </div>
 
 </body>
