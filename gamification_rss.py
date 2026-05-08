@@ -154,7 +154,7 @@ Feed per temi di gamification. Parte del progetto "Questa è gamification!" di G
 </html>
 """
 
-with open("gamification.html", "w", encoding="utf-8") as f:
+with open("index.html", "w", encoding="utf-8") as f:
     f.write(html)
 
-print("HTML generato: gamification.html")
+print("HTML generato: index.html")
