@@ -1,7 +1,9 @@
 import feedparser
+
 from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
+
 from jinja2 import Environment, FileSystemLoader
 
 from config import (
@@ -15,64 +17,70 @@ from config import (
 all_entries = []
 seen = set()
 
-cutoff_date = datetime.now(ZoneInfo("UTC")) - timedelta(days=DAYS_LIMIT)
-
-def safe_parse_date(entry):
-    for key in ("published", "updated", "created"):
-        raw = getattr(entry, key, None)
-        if raw:
-            try:
-                dt = parsedate_to_datetime(raw)
-                if dt.tzinfo is None:
-                    dt = dt.replace(tzinfo=ZoneInfo("UTC"))
-                return dt.astimezone(ZoneInfo("UTC"))
-            except Exception:
-                continue
-    return datetime.now(ZoneInfo("UTC"))
+# limite ultimi x giorni
+cutoff_date = datetime.now().astimezone() - timedelta(days=DAYS_LIMIT)
 
 for url in SOURCE_RSS:
+
     feed = feedparser.parse(url)
+
+    # nome della fonte RSS
     source = getattr(feed.feed, "title", "Fonte sconosciuta")
 
     for entry in feed.entries:
 
-        title = getattr(entry, "title", "").strip()
-        link = getattr(entry, "link", "").strip()
+        title = entry.title.strip()
 
-        entry_id = link or title
-
-        if not entry_id or entry_id in seen:
+        # evita duplicati
+        if title in seen:
             continue
 
-        parsed_date = safe_parse_date(entry)
+        # recupera data articolo
+        raw_date = getattr(entry, "published", "")
 
-        if parsed_date < cutoff_date:
-            continue
+        try:
+            parsed_date = parsedate_to_datetime(raw_date)
 
-        seen.add(entry_id)
+            # filtra ultimi x giorni
+            if parsed_date < cutoff_date:
+                continue
+
+            published = parsed_date.strftime("%d/%m/%Y %H:%M")
+
+        except Exception:
+            parsed_date = datetime.now().astimezone()
+            published = "Data non disponibile"
+
+        seen.add(title)
 
         all_entries.append({
-            "title": title or "Senza titolo",
-            "link": link,
+            "title": title,
+            "link": entry.link,
             "summary": getattr(entry, "summary", ""),
-            "published": parsed_date.strftime("%d/%m/%Y %H:%M"),
+            "published": published,
             "source": source,
             "parsed_date": parsed_date,
         })
 
-# ordinamento stabile (anche in caso di pari data)
+# ordina per data decrescente
 all_entries.sort(
-    key=lambda x: (x["parsed_date"], x["title"]),
+    key=lambda x: x["parsed_date"],
     reverse=True
 )
 
-env = Environment(loader=FileSystemLoader("templates"))
+# setup template engine
+env = Environment(
+    loader=FileSystemLoader("templates")
+)
+
 template = env.get_template("homepage.html")
 
 html = template.render(
     page_title=PAGE_TITLE,
     footer_text=FOOTER_TEXT,
-    updated_at=datetime.now(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
+    updated_at=datetime.now()
+        .astimezone(TIMEZONE)
+        .strftime("%d/%m/%Y %H:%M"),
     articles=all_entries
 )
 
