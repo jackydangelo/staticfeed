@@ -2,7 +2,7 @@ name: Update RSS HTML
 
 on:
   schedule:
-    - cron: "*/30 * * * *"
+   - cron: "35 16 * * *"
 
   workflow_dispatch:
 
