@@ -93,9 +93,7 @@ template = env.get_template("homepage.html")
 html = template.render(
     page_title=PAGE_TITLE,
     footer_text=FOOTER_TEXT,
-    updated_at=now
-        .astimezone(TIMEZONE)
-        .strftime("%d/%m/%Y %H:%M"),
+    updated_at=now.astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
     articles=all_entries
 )
 
