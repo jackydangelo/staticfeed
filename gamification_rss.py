@@ -3,16 +3,19 @@ from datetime import datetime, timedelta
 from email.utils import parsedate_to_datetime
 from zoneinfo import ZoneInfo
 
-SOURCE_RSS = [
-    "https://news.google.com/rss/search?q=gamification",
-    "https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it"
-]
+from config import (
+    SOURCE_RSS,
+    DAYS_LIMIT,
+    TIMEZONE,
+    PAGE_TITLE,
+    FOOTER_TEXT
+)
 
 all_entries = []
 seen = set()
 
-# limite ultimi 30 giorni
-cutoff_date = datetime.now().astimezone() - timedelta(days=30)
+# limite ultimi x giorni
+cutoff_date = datetime.now().astimezone() - timedelta(DAYS_LIMIT)
 
 for url in SOURCE_RSS:
     feed = feedparser.parse(url)
@@ -66,15 +69,15 @@ html = f"""
 <html lang="it">
 <head>
 <meta charset="UTF-8">
-<title>Gamification News</title>
+<title>{PAGE_TITLE}</title>
 <link rel="stylesheet" href="static/style.css">
 </head>
 
 <body>
 
-<h1>🎮 Gamification News</h1>
+<h1>🎮 {PAGE_TITLE}</h1>
 
-<p>Ultimo aggiornamento: {datetime.now().astimezone(ZoneInfo("Europe/Rome")).strftime("%d/%m/%Y %H:%M")}</p>
+<p>Ultimo aggiornamento: {datetime.now().astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M")}</p>
 """
 
 for article in all_entries:
@@ -100,7 +103,7 @@ for article in all_entries:
 
 html += """
 <div class="footer">
-Feed per temi di gamification. Parte del progetto "Questa è gamification!" di Giacomo D'angelo.
+{FOOTER_TEXT}
 </div>
 
 </body>
