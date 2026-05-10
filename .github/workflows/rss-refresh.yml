@@ -2,11 +2,12 @@ name: Refresh RSS Feed
 
 on:
   schedule:
-    # ogni 30 minuti
     - cron: '*/30 * * * *'
 
-  # permette avvio manuale dalla UI GitHub
   workflow_dispatch:
+
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
   refresh-feed:
@@ -16,28 +17,20 @@ jobs:
       contents: write
 
     steps:
-      # scarica il repository
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # installa Python
       - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      # installa dipendenze se esiste requirements.txt
       - name: Install dependencies
-        run: |
-          if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
-          fi
+        run: pip install -r requirements.txt
 
-      # esegue lo script RSS
       - name: Run RSS generator
         run: python gamification_rss.py
 
-      # commit automatico SOLO se ci sono modifiche
       - name: Commit and push changes
         run: |
           git config user.name "github-actions"
