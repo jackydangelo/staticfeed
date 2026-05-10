@@ -84,7 +84,7 @@ html = template.render(
     articles=all_entries
 )
 
-with open("index.html", "w", encoding="utf-8") as f:
+with open("docs/index.html", "w", encoding="utf-8") as f:
     f.write(html)
 
 print("HTML generato: index.html")
