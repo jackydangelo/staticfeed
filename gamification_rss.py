@@ -16,8 +16,10 @@ from config import (
 all_entries = []
 seen = set()
 
+now = datetime.now().astimezone()
 # limite ultimi x giorni
-cutoff_date = datetime.now().astimezone() - timedelta(days=DAYS_LIMIT)
+cutoff_date = now - timedelta(days=DAYS_LIMIT)
+
 
 for url in SOURCE_RSS:
 
@@ -91,7 +93,7 @@ template = env.get_template("homepage.html")
 html = template.render(
     page_title=PAGE_TITLE,
     footer_text=FOOTER_TEXT,
-    updated_at=datetime.now()
+    updated_at=now
         .astimezone(TIMEZONE)
         .strftime("%d/%m/%Y %H:%M"),
     articles=all_entries
