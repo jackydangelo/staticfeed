@@ -13,91 +13,146 @@ from config import (
     FOOTER_TEXT
 )
 
-all_entries = []
-seen = set()
 
-now = datetime.now().astimezone()
-# limite ultimi x giorni
-cutoff_date = now - timedelta(days=DAYS_LIMIT)
+def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
+    """Restituisce la data limite per filtrare gli articoli."""
+    return now - timedelta(days=days_limit)
 
 
-for url in SOURCE_RSS:
+def parse_entry_date(entry) -> datetime | None:
+    """Converte la data dell'articolo in datetime timezone-aware."""
 
-    feed = feedparser.parse(url)
+    raw_parsed = (
+        getattr(entry, "published_parsed", None)
+        or getattr(entry, "updated_parsed", None)
+    )
 
-    # nome della fonte RSS
+    if not raw_parsed:
+        return None
+
+    try:
+        return datetime(
+            *raw_parsed[:6],
+            tzinfo=ZoneInfo("UTC")
+        ).astimezone()
+
+    except Exception as e:
+        print("Errore parsing data:", getattr(entry, "title", "N/A"), e)
+        return None
+
+
+def extract_articles(
+    feed_url: str,
+    cutoff_date: datetime,
+    seen: set
+) -> list:
+
+    articles = []
+
+    feed = feedparser.parse(feed_url)
+
     source = getattr(feed.feed, "title", "Fonte sconosciuta")
 
     for entry in feed.entries:
 
         title = entry.title.strip()
 
-        # evita duplicati
         if title in seen:
             continue
 
-        # recupera data articolo
-        raw_parsed = (
-            getattr(entry, "published_parsed", None)
-            or getattr(entry, "updated_parsed", None)
-        )
+        parsed_date = parse_entry_date(entry)
 
-        try:
+        if not parsed_date:
+            continue
 
-            # nessuna data -> scarta articolo
-            if not raw_parsed:
-                continue
-
-            parsed_date = datetime(
-                *raw_parsed[:6],
-                tzinfo=ZoneInfo("UTC")
-            ).astimezone()
-
-            # filtra ultimi x giorni
-            if parsed_date < cutoff_date:
-                continue
-
-            published = parsed_date.strftime("%d/%m/%Y %H:%M")
-
-        except Exception as e:
-
-            print("Errore parsing data:", title, e)
-
-            # data non valida -> scarta
+        if parsed_date < cutoff_date:
             continue
 
         seen.add(title)
 
-        all_entries.append({
+        articles.append({
             "title": title,
             "link": entry.link,
             "summary": getattr(entry, "summary", ""),
-            "published": published,
+            "published": parsed_date.strftime("%d/%m/%Y %H:%M"),
             "source": source,
             "parsed_date": parsed_date,
         })
 
-# ordina per data decrescente
-all_entries.sort(
-    key=lambda x: x["parsed_date"],
-    reverse=True
-)
+    return articles
 
-# setup template engine
-env = Environment(
-    loader=FileSystemLoader("templates")
-)
 
-template = env.get_template("homepage.html")
+def collect_articles(cutoff_date: datetime) -> list:
 
-html = template.render(
-    page_title=PAGE_TITLE,
-    footer_text=FOOTER_TEXT,
-    updated_at=now.astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
-    articles=all_entries
-)
+    all_articles = []
+    seen = set()
 
-with open("docs/index.html", "w", encoding="utf-8") as f:
-    f.write(html)
+    for url in SOURCE_RSS:
 
-print("HTML generato: index.html")
+        articles = extract_articles(
+            feed_url=url,
+            cutoff_date=cutoff_date,
+            seen=seen
+        )
+
+        all_articles.extend(articles)
+
+    all_articles.sort(
+        key=lambda x: x["parsed_date"],
+        reverse=True
+    )
+
+    return all_articles
+
+
+def render_html(
+    articles: list,
+    now: datetime
+) -> str:
+
+    env = Environment(
+        loader=FileSystemLoader("templates")
+    )
+
+    template = env.get_template("homepage.html")
+
+    return template.render(
+        page_title=PAGE_TITLE,
+        footer_text=FOOTER_TEXT,
+        updated_at=now.astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
+        articles=articles
+    )
+
+
+def save_html(
+    html: str,
+    output_path: str = "docs/index.html"
+) -> None:
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(html)
+
+
+def main():
+
+    now = datetime.now().astimezone()
+
+    cutoff_date = get_cutoff_date(
+        now=now,
+        days_limit=DAYS_LIMIT
+    )
+
+    articles = collect_articles(cutoff_date)
+
+    html = render_html(
+        articles=articles,
+        now=now
+    )
+
+    save_html(html)
+
+    print("HTML generato: docs/index.html")
+
+
+if __name__ == "__main__":
+    main()
