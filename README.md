@@ -1,3 +1,11 @@
+<p align="center">
+  <img src="https://img.shields.io/github/stars/jackydangelo/gamification-news?style=for-the-badge&logo=github&labelColor=1e293b&color=f59e0b" />
+  
+  <a href="https://makeapullrequest.com">
+    <img src="https://img.shields.io/badge/PRs-Welcome-10b981?style=for-the-badge&logo=github&labelColor=1e293b" />
+  </a>
+</p>
+
 # Gamification news
 RSS feeder personale per tracciare notizie di gamification. Parte del progetto [Questa è gamification!](https://giacomification.substack.com/), newsletter su substack mensile.
 
