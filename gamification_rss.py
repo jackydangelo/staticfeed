@@ -102,6 +102,10 @@ def collect_articles(cutoff_date: datetime) -> list:
         reverse=True
     )
 
+    # Rimuove il campo tecnico usato solo per sorting. Questa scelta è per separare i dati tecnici da quelli realmente utilizzati dall'html
+    for article in all_articles:
+    article.pop("parsed_date", None)
+
     return all_articles
 
 
