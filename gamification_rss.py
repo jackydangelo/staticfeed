@@ -2,6 +2,7 @@ import feedparser
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
+from urllib.parse import urlsplit, urlunsplit
 
 from jinja2 import Environment, FileSystemLoader
 
@@ -43,6 +44,16 @@ def parse_entry_date(entry) -> datetime | None:
         print("Errore parsing data:", getattr(entry, "title", "N/A"), e)
         return None
 
+def normalize_url(url: str) -> str:
+    parts = urlsplit(url)
+
+    return urlunsplit((
+        parts.scheme.lower(),
+        parts.netloc.lower(),
+        parts.path.rstrip("/"),
+        "",
+        ""
+    ))
 
 def extract_articles(
     feed_url: str,
@@ -58,9 +69,9 @@ def extract_articles(
 
     for entry in feed.entries:
 
-        title = entry.title.strip()
-
-        if title in seen:
+        url = normalize_url(entry.link)
+        
+        if url in seen:
             continue
 
         parsed_date = parse_entry_date(entry)
@@ -71,7 +82,7 @@ def extract_articles(
         if parsed_date < cutoff_date:
             continue
 
-        seen.add(title)
+        seen.add(url)
 
         articles.append({
             "title": title,
