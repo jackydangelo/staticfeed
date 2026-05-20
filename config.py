@@ -1,6 +1,6 @@
 from zoneinfo import ZoneInfo
 
-SOURCE_RSS =
+SOURCE_RSS = [
     {
         "url": "https://news.google.com/rss/search?q=gamification", 
         "label": "Google News"
@@ -25,6 +25,7 @@ SOURCE_RSS =
         "url": "https://www.reddit.com/search.rss?q=gamification", 
         "label": "Reddit"
     }
+]
 
 DAYS_LIMIT = 30
 
