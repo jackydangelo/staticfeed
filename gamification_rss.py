@@ -103,7 +103,7 @@ def collect_articles(cutoff_date: datetime) -> list:
     all_articles = []
     seen = set()
 
-    for url in SOURCE_RSS:
+    for source_info in SOURCE_RSS:
 
         articles = extract_articles(
             feed_url=source_info["url"],
