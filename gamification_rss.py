@@ -59,6 +59,7 @@ def extract_articles(
     feed_url: str,
     cutoff_date: datetime,
     custom_source_label: str,
+    keyword: str,
     seen: set
 ) -> list:
 
@@ -92,6 +93,7 @@ def extract_articles(
             "summary": getattr(entry, "summary", ""),
             "published": parsed_date.strftime("%d/%m/%Y %H:%M"),
             "source": source,
+            "keyword": keyword,
             "parsed_date": parsed_date,
         })
 
@@ -108,6 +110,7 @@ def collect_articles(cutoff_date: datetime) -> list:
         articles = extract_articles(
             feed_url=source_info["url"],
             custom_source_label=source_info["label"],
+            keyword=source_info["keyword"],
             cutoff_date=cutoff_date,
             seen=seen
         )
