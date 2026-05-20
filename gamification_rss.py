@@ -58,6 +58,7 @@ def normalize_url(url: str) -> str:
 def extract_articles(
     feed_url: str,
     cutoff_date: datetime,
+    custom_source_label: str,
     seen: set
 ) -> list:
 
@@ -65,7 +66,7 @@ def extract_articles(
 
     feed = feedparser.parse(feed_url)
 
-    source = getattr(feed.feed, "title", "Fonte sconosciuta")
+    source = custom_source_label
 
     for entry in feed.entries:
         
@@ -105,7 +106,8 @@ def collect_articles(cutoff_date: datetime) -> list:
     for url in SOURCE_RSS:
 
         articles = extract_articles(
-            feed_url=url,
+            feed_url=source_info["url"],
+            custom_source_label=source_info["label"],
             cutoff_date=cutoff_date,
             seen=seen
         )
