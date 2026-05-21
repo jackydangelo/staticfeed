@@ -76,6 +76,13 @@ def extract_articles(
 
     feed = feedparser.parse(feed_url)
 
+    if feed.bozo:
+        logging.warning("Bad feed: %s (%s)", feed_url, feed.bozo_exception)
+
+    if not getattr(feed, "entries", None):
+        logging.warning("Empty feed: %s", feed_url)
+        return []
+
     source = custom_source_label
 
     for entry in feed.entries:
