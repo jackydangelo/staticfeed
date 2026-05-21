@@ -10,6 +10,7 @@ from jinja2 import Environment, FileSystemLoader
 from config import (
     SOURCE_RSS,
     DAYS_LIMIT,
+    REQUEST_TIMEOUT,
     TIMEZONE,
     PAGE_TITLE,
     FOOTER_TEXT
@@ -74,7 +75,11 @@ def extract_articles(
 
     articles = []
 
-    feed = feedparser.parse(feed_url)
+    try:
+        feed = feedparser.parse(feed_url, timeout=REQUEST_TIMEOUT)
+    except Exception as e:
+        logging.error("Connection timeout or network error for feed: %s (%s)", feed_url, e)
+        return []
 
     if feed.bozo:
         logging.warning("Bad feed: %s (%s)", feed_url, feed.bozo_exception)
