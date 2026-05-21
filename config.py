@@ -35,6 +35,8 @@ SOURCE_RSS = [
 
 DAYS_LIMIT = 30
 
+REQUEST_TIMEOUT = 20
+
 TIMEZONE = ZoneInfo("Europe/Rome")
 
 PAGE_TITLE = "Gamification News"
