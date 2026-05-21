@@ -48,9 +48,10 @@ def parse_entry_date(entry) -> datetime | None:
 
     except Exception:
         logging.exception(
-            f"Error parsing date for: "
-            f"{getattr(entry, 'title', 'N/A')}"
-    )
+            "Error parsing date for: %s",
+            getattr(entry, "title", "N/A")
+        )
+        return None
 
 def normalize_url(url: str) -> str:
     parts = urlsplit(url)
@@ -177,8 +178,11 @@ def main():
     )
     try:
         save_html(html)
-        logging.info(f"Collected {len(articles)} articles")
-        logging.info("HTML created: docs/index.html")
+        logging.info(
+            "Collected %d articles - HTML created: docs/index.html",
+            len(articles)
+        )
+    
     except Exception:
         logging.exception("Failed to save HTML")
 
