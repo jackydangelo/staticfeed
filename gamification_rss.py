@@ -1,4 +1,5 @@
 import feedparser
+import logging
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -17,6 +18,11 @@ from config import (
 """A module-level shared Jinja environment to avoid unnecessary recreations and reuse the internal template cache."""
 ENV = Environment(
     loader=FileSystemLoader("templates")
+)
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
@@ -40,9 +46,11 @@ def parse_entry_date(entry) -> datetime | None:
             tzinfo=ZoneInfo("UTC")
         ).astimezone()
 
-    except Exception as e:
-        print("Error parsing data:", getattr(entry, "title", "N/A"), e)
-        return None
+    except Exception:
+        logging.exception(
+            f"Error parsing date for: "
+            f"{getattr(entry, 'title', 'N/A')}"
+    )
 
 def normalize_url(url: str) -> str:
     parts = urlsplit(url)
@@ -167,10 +175,12 @@ def main():
         articles=articles,
         now=now
     )
-
-    save_html(html)
-
-    print("HTML created: docs/index.html")
+    try:
+        save_html(html)
+        logging.info(f"Collected {len(articles)} articles")
+        logging.info("HTML created: docs/index.html")
+    except Exception:
+        logging.exception("Failed to save HTML")
 
 
 if __name__ == "__main__":
