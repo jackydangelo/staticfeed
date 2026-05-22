@@ -231,7 +231,7 @@ def main():
     try:
         generate_rss(articles,now)
         logging.info(
-            "RSS created: docs/rss.xml (%d items)", 
+            "Collected %d articles - RSS created: docs/rss.xml", 
             len(articles)
         )
     
