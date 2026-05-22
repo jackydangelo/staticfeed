@@ -1,7 +1,6 @@
 import feedparser
 import logging
 import socket
-import html
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
