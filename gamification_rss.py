@@ -71,6 +71,49 @@ def normalize_url(url: str) -> str:
         ""
     ))
 
+def fetch_feed(feed_url: str):
+    feed = feedparser.parse(feed_url)
+
+    if feed.bozo:
+        logging.warning(
+            "Malformed feed: %s (%s)",
+            feed_url,
+            feed.bozo_exception
+        )
+
+    entries = getattr(feed, "entries", None)
+
+    if not entries:
+        logging.warning("Empty feed: %s", feed_url)
+        return []
+
+    return entries
+
+def build_article(entry, source: str, keyword: str):
+
+    title = getattr(entry, "title", "").strip()
+    link = getattr(entry, "link", "").strip()
+
+    if not title or not link:
+        return None
+
+    parsed_date = parse_entry_date(entry)
+
+    if not parsed_date:
+        return None
+
+    return {
+        "title": title,
+        "link": link,
+        "summary": getattr(entry, "summary", ""),
+        "published": format_datetime(parsed_date),
+        "published_display": parsed_date.strftime("%d/%m/%Y %H:%M"),
+        "source": source,
+        "keyword": keyword,
+        "parsed_date": parsed_date,
+        "normalized_url": normalize_url(link),
+    }
+
 def extract_articles(
     feed_url: str,
     cutoff_date: datetime,
@@ -81,48 +124,32 @@ def extract_articles(
 
     articles = []
 
-    feed = feedparser.parse(feed_url)
+    entries = fetch_feed(feed_url)
 
-    if feed.bozo:
-        logging.warning("Malformed feed or connection timeout: %s (%s)", feed_url, feed.bozo_exception)
+    for entry in entries:
 
-    if not getattr(feed, "entries", None):
-        logging.warning("Empty feed: %s", feed_url)
-        return []
+        article = build_article(
+            entry,
+            custom_source_label,
+            keyword
+        )
 
-    source = custom_source_label
-
-    for entry in feed.entries:
-        
-        title = entry.title.strip()
-        url = normalize_url(entry.link)
-        
-        if url in seen:
-            continue
-        
-        parsed_date = parse_entry_date(entry)
-
-        if not parsed_date:
+        if not article:
             continue
 
-        if parsed_date < cutoff_date:
+        if article["parsed_date"] < cutoff_date:
             continue
 
-        seen.add(url)
+        normalized_url = article.pop("normalized_url")
 
-        articles.append({
-            "title": title,
-            "link": entry.link,
-            "summary": getattr(entry, "summary", ""),
-            "published": format_datetime(parsed_date),
-            "published_display": parsed_date.strftime("%d/%m/%Y %H:%M"),
-            "source": source,
-            "keyword": keyword,
-            "parsed_date": parsed_date,
-        })
+        if normalized_url in seen:
+            continue
+
+        seen.add(normalized_url)
+
+        articles.append(article)
 
     return articles
-
 
 def collect_articles(cutoff_date: datetime) -> list:
 
