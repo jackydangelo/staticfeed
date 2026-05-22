@@ -178,10 +178,10 @@ def generate_rss(articles, now, output_path="docs/rss.xml"):
     template = ENV.get_template("rss.xml")
 
     rss = template.render(
-        page_title=PAGE_TITLE,
-        url=URL,
+        page_title=escape(PAGE_TITLE),
+        url=escape(URL),
         last_build_date=format_datetime(now),
-        articles=articles
+        articles=prepare_rss_articles(articles)
     )
 
     with open(output_path, "w", encoding="utf-8") as f:
