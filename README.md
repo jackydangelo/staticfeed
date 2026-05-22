@@ -24,6 +24,7 @@ The site auto-updates through a GitHub Action and is hosted by a GitHub Page.
 - `docs/rss.xml` - RSS updated by the GitHub Action (ready for external feeder)
 - `docs/static/style.css` - Graphical and static component
 - `templates/homepage.html` - Structure of the HTML compiled by the Python code
+- `templates/rss.xml` - Structure of the RSS compiled by the Python code
 - `config.py` - RSS customization variables
 - `gamification_rss.py` - Python code executed once a day by the GitHub Action
 - `requirements.txt` - Libraries required to run the code
