@@ -14,6 +14,7 @@ from config import (
     DAYS_LIMIT,
     REQUEST_TIMEOUT,
     TIMEZONE,
+    URL,
     PAGE_TITLE,
     FOOTER_TEXT
 )
@@ -190,7 +191,7 @@ def generate_rss(articles, now, output_path="docs/rss.xml"):
 <rss version="2.0">
 <channel>
     <title>{PAGE_TITLE}</title>
-    <link>https://jackydangelo.github.io/gamification-news/</link>
+    <link>{URL}</link>
     <description>RSS feed</description>
     <lastBuildDate>{format_datetime(now)}</lastBuildDate>
     <language>it</language>
