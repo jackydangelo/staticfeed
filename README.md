@@ -21,6 +21,7 @@ The site auto-updates through a GitHub Action and is hosted by a GitHub Page.
 ### Project Structure
 - `.github/workflow/update.yml` - GitHub Action for daily refresh
 - `docs/index.html` - Final HTML updated by the GitHub Action
+- `docs/rss.xml` - RSS updated by the GitHub Action (ready for external feeder)
 - `docs/static/style.css` - Graphical and static component
 - `templates/homepage.html` - Structure of the HTML compiled by the Python code
 - `config.py` - RSS customization variables
