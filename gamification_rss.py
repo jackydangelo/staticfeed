@@ -175,31 +175,14 @@ def save_html(
         f.write(html)
 
 def generate_rss(articles, now, output_path="docs/rss.xml"):
-    rss_items = []
+    template = ENV.get_template("rss.xml")
 
-    for a in articles:
-        rss_items.append(f"""
-        <item>
-            <title>{html.escape(a["title"])}</title>
-            <link>{a["link"]}</link>
-            <guid isPermaLink="true">{html.escape(a["link"])}</guid>
-            <description><![CDATA[{a.get("summary", "")}]]></description>
-            <pubDate>{a["published"]}</pubDate>
-        </item>
-        """)
-
-    rss = f"""<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0">
-<channel>
-    <title>{PAGE_TITLE}</title>
-    <link>{URL}</link>
-    <description>RSS feed</description>
-    <lastBuildDate>{format_datetime(now)}</lastBuildDate>
-    <language>it</language>
-    {''.join(rss_items)}
-</channel>
-</rss>
-"""
+    rss = template.render(
+        page_title=PAGE_TITLE,
+        url=URL,
+        last_build_date=format_datetime(now),
+        articles=articles
+    )
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(rss)
