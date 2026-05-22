@@ -1,11 +1,12 @@
 import feedparser
 import logging
 import socket
+import html
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit, urlunsplit
-
+from email.utils import format_datetime
 from jinja2 import Environment, FileSystemLoader
 
 from config import (
@@ -112,7 +113,7 @@ def extract_articles(
             "title": title,
             "link": entry.link,
             "summary": getattr(entry, "summary", ""),
-            "published": parsed_date.strftime("%d/%m/%Y %H:%M"),
+            "published": format_datetime(parsed_date),
             "source": source,
             "keyword": keyword,
             "parsed_date": parsed_date,
@@ -163,7 +164,6 @@ def render_html(
         articles=articles
     )
 
-
 def save_html(
     html: str,
     output_path: str = "docs/index.html"
@@ -171,6 +171,36 @@ def save_html(
 
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
+
+def generate_rss(articles, now, output_path="docs/rss.xml"):
+    rss_items = []
+
+    for a in articles:
+        rss_items.append(f"""
+        <item>
+            <title>{html.escape(a["title"])}</title>
+            <link>{a["link"]}</link>
+            <guid isPermaLink="true">{html.escape(a["link"])}</guid>
+            <description><![CDATA[{a.get("summary", "")}]]></description>
+            <pubDate>{a["published"]}</pubDate>
+        </item>
+        """)
+
+    rss = f"""<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0">
+<channel>
+    <title>{PAGE_TITLE}</title>
+    <link>https://jackydangelo.github.io/gamification-news/</link>
+    <description>RSS feed</description>
+    <lastBuildDate>{format_datetime(now)}</lastBuildDate>
+    <language>it</language>
+    {''.join(rss_items)}
+</channel>
+</rss>
+"""
+
+    with open(output_path, "w", encoding="utf-8") as f:
+        f.write(rss)
 
 
 def main():
@@ -197,6 +227,16 @@ def main():
     
     except Exception:
         logging.exception("Failed to save HTML")
+
+    try:
+        generate_rss(articles,now)
+        logging.info(
+            "RSS created: docs/rss.xml (%d items)", 
+            len(articles)
+        )
+    
+    except Exception:
+        logging.exception("Failed to create RSS")
 
 
 if __name__ == "__main__":
