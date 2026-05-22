@@ -8,6 +8,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit, urlunsplit
 from email.utils import format_datetime
 from jinja2 import Environment, FileSystemLoader
+from xml.sax.saxutils import escape
 
 from config import (
     SOURCE_RSS,
@@ -174,12 +175,25 @@ def save_html(
     with open(output_path, "w", encoding="utf-8") as f:
         f.write(html)
 
+def prepare_rss_articles(articles):
+    cleaned = []
+
+    for a in articles:
+        cleaned.append({
+            "title": escape(a.get("title", "")),
+            "link": escape(a.get("link", "")),
+            "summary": a.get("summary", ""),
+            "published": a.get("published", "")
+        })
+
+    return cleaned
+
 def generate_rss(articles, now, output_path="docs/rss.xml"):
     template = ENV.get_template("rss.xml")
 
     rss = template.render(
-        page_title=escape(PAGE_TITLE),
-        url=escape(URL),
+        page_title=PAGE_TITLE,
+        url=URL,
         last_build_date=format_datetime(now),
         articles=prepare_rss_articles(articles)
     )
