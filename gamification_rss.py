@@ -115,6 +115,7 @@ def extract_articles(
             "link": entry.link,
             "summary": getattr(entry, "summary", ""),
             "published": format_datetime(parsed_date),
+            "published_display": parsed_date.strftime("%d/%m/%Y %H:%M"),
             "source": source,
             "keyword": keyword,
             "parsed_date": parsed_date,
