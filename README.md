@@ -18,6 +18,8 @@ Free feeders do not allow you to collect information by filtering by keywords. T
 Developed with passion, curiosity, and by taking advantage of what is called vibe coding.
 ### Deploy
 The site auto-updates through a GitHub Action and is hosted by a GitHub Page.
+### Output
+The program generate two files: a [static HTML](https://jackydangelo.github.io/gamification-news/) and a [RSS file](https://jackydangelo.github.io/gamification-news/rss) for feeder.
 ### Project Structure
 - `.github/workflow/update.yml` - GitHub Action for daily refresh
 - `docs/index.html` - Final HTML updated by the GitHub Action
