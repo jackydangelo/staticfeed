@@ -8,7 +8,6 @@ from urllib.parse import urlsplit, urlunsplit
 from email.utils import format_datetime
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import escape
-from bs4 import BeautifulSoup
 
 from config import (
     SOURCE_RSS,
@@ -61,21 +60,6 @@ def parse_entry_date(entry) -> datetime | None:
         )
         return None
 
-""" Searching best summary possible for each article"""
-def clean_summary(html: str, title: str) -> str:
-
-    soup = BeautifulSoup(html, "html.parser")
-
-    for tag in soup.find_all(["p", "div", "strong", "b"]):
-
-        text = tag.get_text(" ", strip=True)
-
-        if title.lower() in text.lower():
-            tag.decompose()
-            break
-
-    return str(soup)
-
 def normalize_url(url: str) -> str:
     parts = urlsplit(url)
 
@@ -118,13 +102,10 @@ def build_article(entry, source: str, keyword: str):
     if not parsed_date:
         return None
 
-    raw_summary = getattr(entry, "summary", "")
-    summary = clean_summary(raw_summary, title)
-    
     return {
         "title": title,
         "link": link,
-        "summary": summary,
+        "summary": getattr(entry, "summary", ""),
         "published": format_datetime(parsed_date),
         "published_display": parsed_date.strftime("%d/%m/%Y %H:%M"),
         "source": source,
