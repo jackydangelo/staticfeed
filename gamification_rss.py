@@ -102,6 +102,18 @@ def build_article(entry, source: str, keyword: str):
     if not parsed_date:
         return None
 
+    """Search best description possible"""
+    summary = ""
+
+    if getattr(entry, "content", None):
+        summary = entry.content[0].value
+
+    elif getattr(entry, "summary", None):
+        summary = entry.summary
+
+    elif getattr(entry, "description", None):
+        summary = entry.description
+
     return {
         "title": title,
         "link": link,
