@@ -35,13 +35,18 @@ You can easily fork this repository to track **any niche or keywords** you want 
    ```python
    SOURCE_RSS = [
        {
-           "url": "[https://news.google.com/rss/search?q=your_keyword](https://news.google.com/rss/search?q=your_keyword)", 
+           "url": "https://news.google.com/rss/search?q=your_keyword", 
            "label": "Google News", 
            "keyword": "your_keyword"
        }
    ]
    DAYS_LIMIT = 7  # Keep only articles from the last X days
-
+  3. **Enable GitHub Pages:**
+   * Go to your repository **Settings** -> **Pages** (in the left sidebar).
+   * Under *Build and deployment* -> *Source*, select **Deploy from a branch**.
+   * Under *Branch*, choose `main` and select the `/docs` folder from the dropdown menu. Click **Save**.
+4. **Enable the Automation:** Go to the **Actions** tab of your repository and click the green button to enable workflows. The GitHub Action will now automatically run once a day based on the cron schedule in `.github/workflows/update.yml`.
+ 
 
 ## Project Structure
 - `.github/workflow/update.yml` - GitHub Action for daily refresh
