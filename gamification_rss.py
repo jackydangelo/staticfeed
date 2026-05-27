@@ -32,6 +32,7 @@ logging.basicConfig(
 """Timeout global net"""
 socket.setdefaulttimeout(float(REQUEST_TIMEOUT))
 
+
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
     """Returns the cutoff date for filtering articles."""
     return now - timedelta(days=days_limit)
@@ -60,6 +61,7 @@ def parse_entry_date(entry) -> datetime | None:
         )
         return None
 
+
 def normalize_url(url: str) -> str:
     parts = urlsplit(url)
 
@@ -70,6 +72,7 @@ def normalize_url(url: str) -> str:
         "",
         ""
     ))
+
 
 def fetch_feed(feed_url: str):
     feed = feedparser.parse(feed_url)
@@ -88,6 +91,7 @@ def fetch_feed(feed_url: str):
         return []
 
     return entries
+
 
 def build_article(entry, source: str, keyword: str):
 
@@ -114,6 +118,7 @@ def build_article(entry, source: str, keyword: str):
         "normalized_url": normalize_url(link),
     }
 
+
 def extract_articles(
     feed_url: str,
     cutoff_date: datetime,
@@ -124,9 +129,7 @@ def extract_articles(
 
     articles = []
 
-    entries = fetch_feed(feed_url)
-
-    for entry in entries:
+    for entry in fetch_feed(feed_url):
 
         article = build_article(
             entry,
@@ -134,10 +137,10 @@ def extract_articles(
             keyword
         )
 
-        if not article:
-            continue
-
-        if article["parsed_date"] < cutoff_date:
+        if (
+            not article
+            or article["parsed_date"] < cutoff_date
+        ):
             continue
 
         normalized_url = article.pop("normalized_url")
@@ -151,6 +154,7 @@ def extract_articles(
 
     return articles
 
+
 def collect_articles(cutoff_date: datetime) -> list:
 
     all_articles = []
@@ -158,15 +162,15 @@ def collect_articles(cutoff_date: datetime) -> list:
 
     for source_info in SOURCE_RSS:
 
-        articles = extract_articles(
-            feed_url=source_info["url"],
-            custom_source_label=source_info["label"],
-            keyword=source_info["keyword"],
-            cutoff_date=cutoff_date,
-            seen=seen
+        all_articles.extend(
+            extract_articles(
+                feed_url=source_info["url"],
+                custom_source_label=source_info["label"],
+                keyword=source_info["keyword"],
+                cutoff_date=cutoff_date,
+                seen=seen
+            )
         )
-
-        all_articles.extend(articles)
 
     all_articles.sort(
         key=lambda x: x["parsed_date"],
@@ -174,58 +178,37 @@ def collect_articles(cutoff_date: datetime) -> list:
     )
 
     """Removes the technical field used solely for sorting. This is done to separate the technical data from the data actually used by the HTML."""
-    for article in all_articles: article.pop("parsed_date", None)
+    for article in all_articles:
+        article.pop("parsed_date", None)
 
     return all_articles
 
 
-def render_html(
-    articles: list,
-    now: datetime
-) -> str:
-
-    template = ENV.get_template("homepage.html")
-
-    return template.render(
-        page_title=PAGE_TITLE,
-        footer_text=FOOTER_TEXT,
-        updated_at=now.astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
-        articles=articles
-    )
-
-def save_html(
-    html: str,
-    output_path: str = "docs/index.html"
-) -> None:
-
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(html)
-
 def prepare_rss_articles(articles):
-    cleaned = []
 
-    for a in articles:
-        cleaned.append({
+    return [
+        {
             "title": escape(a.get("title", "")),
             "link": escape(a.get("link", "")),
             "summary": a.get("summary", ""),
             "published": a.get("published", "")
-        })
+        }
+        for a in articles
+    ]
 
-    return cleaned
 
-def generate_rss(articles, now, output_path="docs/rss.xml"):
-    template = ENV.get_template("rss.xml")
+def render_template(
+    template_name: str,
+    output_path: str,
+    **context
+) -> None:
 
-    rss = template.render(
-        page_title=PAGE_TITLE,
-        url=URL,
-        last_build_date=format_datetime(now),
-        articles=prepare_rss_articles(articles)
-    )
+    template = ENV.get_template(template_name)
+
+    content = template.render(**context)
 
     with open(output_path, "w", encoding="utf-8") as f:
-        f.write(rss)
+        f.write(content)
 
 
 def main():
@@ -239,27 +222,39 @@ def main():
 
     articles = collect_articles(cutoff_date)
 
-    html = render_html(
-        articles=articles,
-        now=now
-    )
     try:
-        save_html(html)
+        render_template(
+            template_name="homepage.html",
+            output_path="docs/index.html",
+            page_title=PAGE_TITLE,
+            footer_text=FOOTER_TEXT,
+            updated_at=now.astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
+            articles=articles
+        )
+
         logging.info(
             "Collected %d articles - HTML created: docs/index.html",
             len(articles)
         )
-    
+
     except Exception:
         logging.exception("Failed to save HTML")
 
     try:
-        generate_rss(articles,now)
+        render_template(
+            template_name="rss.xml",
+            output_path="docs/rss.xml",
+            page_title=PAGE_TITLE,
+            url=URL,
+            last_build_date=format_datetime(now),
+            articles=prepare_rss_articles(articles)
+        )
+
         logging.info(
-            "Collected %d articles - RSS created: docs/rss.xml", 
+            "Collected %d articles - RSS created: docs/rss.xml",
             len(articles)
         )
-    
+
     except Exception:
         logging.exception("Failed to create RSS")
 
