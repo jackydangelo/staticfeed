@@ -94,8 +94,8 @@ This makes the project usable both as a standalone website and as a source for e
 
 ## Demo
 
-* Static website: https://jackydangelo.github.io/staticfeed/
-* RSS feed: https://jackydangelo.github.io/staticfeed/rss.xml
+* Static website: https://jackydangelo.github.io/gamification-news/
+* RSS feed: https://jackydangelo.github.io/gamification-news/rss.xml
 
 
 ## Build Your Own RSS Tracker
@@ -225,7 +225,7 @@ Pull Requests are welcome, especially for:
 * better deduplication logic
 * caching support
 
-For major changes, please open an issue first.
+Please open an issue first.
 
 
 ## License
