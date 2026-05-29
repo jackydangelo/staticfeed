@@ -44,7 +44,7 @@ REQUEST_TIMEOUT = 20
 
 TIMEZONE = ZoneInfo("Europe/Rome")
 
-URL = "https://jackydangelo.github.io/gamification-news/"
+URL = "https://jackydangelo.github.io/staticfeed/"
 
 PAGE_TITLE = "Gamification News"
 
