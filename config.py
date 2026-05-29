@@ -30,7 +30,7 @@ SOURCE_RSS = [
         "url": "https://www.reddit.com/search.rss?q=gamification", 
         "label": "Reddit",
         "keyword": "gamification" 
-    }
+    },
     {
         "url": "https://hnrss.org/newest?q=gamification", 
         "label": "Hacker News",
