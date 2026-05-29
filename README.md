@@ -79,7 +79,7 @@ It handles:
 
 ### Timezone-Aware Sorting
 
-Articles from different feeds are normalized using Python's `zoneinfo` support to ensure accurate chronological ordering.
+All timestamps are normalized into timezone-aware datetime objects using ```dateutil```, ensuring consistent chronological ordering across heterogeneous RSS and Atom feeds.
 
 
 ### Dual Output
@@ -207,12 +207,13 @@ The goal is to provide a lightweight, hackable, self-hosted aggregation pipeline
 ## Current Data Sources (Gamification Tracking) 
 | Keywords | URL feed | Source | 
 |---|---|---| 
-| gamification | [https://www.google.com/alerts/feeds/15244278077982194024/11541540114411201767](https://news.google.com/rss/search?q=gamification) | Google news | 
-| gamification | [https://www.google.com/alerts/feeds/15244278077982194024/10845276624304286453](https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it) | Google news Italia | 
+| gamification | https://news.google.com/rss/search?q=gamification | Google news | 
+| gamification | https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it | Google news Italia | 
 | gamified | https://news.google.com/rss/search?q=gamified | Google news | 
 | gamificata |  https://news.google.com/rss/search?q=gamificata&hl=it&gl=IT&ceid=IT:it | Google news Italia | 
 | gamificato |  https://news.google.com/rss/search?q=gamificato&hl=it&gl=IT&ceid=IT:it | Google news Italia | 
 | gamification |  https://www.reddit.com/search.rss?q=gamification | Reddit |
+| gamification |  https://hnrss.org/newest?q=gamification | Hacker News |
 
 
 ## Contributing
