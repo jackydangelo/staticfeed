@@ -5,9 +5,12 @@ import socket
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit, urlunsplit
-from email.utils import format_datetime
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import escape
+from email.utils import (
+    format_datetime,
+    parsedate_to_datetime
+)
 
 from config import (
     SOURCE_RSS,
@@ -39,20 +42,17 @@ def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
 
 
 def parse_entry_date(entry) -> datetime | None:
-    """Converts the article date to a timezone-aware datetime."""
-    raw_parsed = (
-        getattr(entry, "published_parsed", None)
-        or getattr(entry, "updated_parsed", None)
-    )
 
-    if not raw_parsed:
+    raw_date = getattr(entry, "published", None)
+
+    if not raw_date:
         return None
 
     try:
-        return datetime(
-            *raw_parsed[:6],
-            tzinfo=ZoneInfo("UTC")
-        ).astimezone()
+        return (
+            parsedate_to_datetime(raw_date)
+            .astimezone(TIMEZONE)
+        )
 
     except Exception:
         logging.exception(
