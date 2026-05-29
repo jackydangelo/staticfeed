@@ -31,6 +31,11 @@ SOURCE_RSS = [
         "label": "Reddit",
         "keyword": "gamification" 
     }
+    {
+        "url": "https://hnrss.org/newest?q=gamification", 
+        "label": "Hacker News",
+        "keyword": "gamification" 
+    }
 ]
 
 DAYS_LIMIT = 30
