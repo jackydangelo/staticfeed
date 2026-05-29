@@ -7,6 +7,7 @@ from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import escape
+from dateutil.parser import parse as parse_date
 from email.utils import (
     format_datetime,
     parsedate_to_datetime
@@ -43,20 +44,21 @@ def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
 
 def parse_entry_date(entry) -> datetime | None:
 
-    raw_date = getattr(entry, "published", None)
+    raw_date = (
+        getattr(entry, "published", None)
+        or getattr(entry, "updated", None)
+    )
 
     if not raw_date:
         return None
 
     try:
-        return (
-            parsedate_to_datetime(raw_date)
-            .astimezone(TIMEZONE)
-        )
+        return parse_date(raw_date).astimezone(TIMEZONE)
 
     except Exception:
         logging.exception(
-            "Error parsing date for: %s",
+            "Error parsing date '%s' for: %s",
+            raw_date,
             getattr(entry, "title", "N/A")
         )
         return None
