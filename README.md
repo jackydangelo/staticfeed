@@ -122,20 +122,25 @@ Click the **Fork** button on GitHub.
 
 ### 2. Configure your feeds
 
-Edit `config.py`:
+Open `config.json` and update the general settings or add your own RSS sources to the `SOURCE_RSS` array:
 
-```python
-SOURCE_RSS = [
+```json
+{
+  "DAYS_LIMIT": 7,
+  "REQUEST_TIMEOUT": 20,
+  "TIMEZONE_STR": "Europe/Rome",
+  "URL": "[https://your-username.github.io/staticfeed/](https://your-username.github.io/staticfeed/)",
+  "PAGE_TITLE": "My Custom News",
+  "FOOTER_TEXT": " have forked this repository!",
+  "SOURCE_RSS": [
     {
-        "url": "https://news.google.com/rss/search?q=your_keyword",
-        "label": "Google News",
-        "keyword": "your_keyword"
+      "url": "[https://news.google.com/rss/search?q=your_keyword](https://news.google.com/rss/search?q=your_keyword)",
+      "label": "Google News",
+      "keyword": "your_keyword"
     }
-]
-
-DAYS_LIMIT = 7
+  ]
+}
 ```
-
 
 ### 3. Enable GitHub Pages
 
@@ -179,7 +184,7 @@ Typical GitHub Action execution:
 
 ```text
 .github/workflows/update.yml   → Scheduled GitHub Action
-config.py                      → RSS source configuration
+config.json                    → RSS source configuration
 templates/homepage.html        → HTML template
 templates/rss.xml              → RSS template
 
@@ -187,7 +192,8 @@ docs/index.html                → Generated static frontend
 docs/rss.xml                   → Generated RSS feed
 docs/static/style.css          → Frontend styling
 
-gamification_rss.py            → Aggregation pipeline
+app.py                         → Aggregation pipeline
+config.py                      → Configuration loader (Python bridge)
 requirements.txt               → Python dependencies
 ```
 
