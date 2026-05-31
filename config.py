@@ -1,55 +1,16 @@
+import json
+import os
 from zoneinfo import ZoneInfo
 
-SOURCE_RSS = [
-    {
-        "url": "https://news.google.com/rss/search?q=gamification", 
-        "label": "Google News",
-        "keyword": "gamification"
-    },
-    {
-        "url": "https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it", 
-        "label": "Google News Italia",
-        "keyword": "gamification" 
-    },
-    {
-        "url": "https://news.google.com/rss/search?q=gamified", 
-        "label": "Google News",
-        "keyword": "gamified" 
-    },
-    {
-        "url": "https://news.google.com/rss/search?q=gamificata&hl=it&gl=IT&ceid=IT:it", 
-        "label": "Google News Italia",
-        "keyword": "gamificata" 
-    },
-    {
-        "url": "https://news.google.com/rss/search?q=gamificato&hl=it&gl=IT&ceid=IT:it", 
-        "label": "Google News Italia",
-        "keyword": "gamificato" 
-    },
-    {
-        "url": "https://www.reddit.com/search.rss?q=gamification", 
-        "label": "Reddit",
-        "keyword": "gamification" 
-    },
-    {
-        "url": "https://hnrss.org/newest?q=gamification", 
-        "label": "Hacker News",
-        "keyword": "gamification" 
-    }
-]
+CONFIG_PATH = os.path.join(os.path.dirname(__file__), "config.json")
 
-DAYS_LIMIT = 30
+with open(CONFIG_PATH, "r", encoding="utf-8") as f:
+    _data = json.load(f)
 
-REQUEST_TIMEOUT = 20
-
-TIMEZONE = ZoneInfo("Europe/Rome")
-
-URL = "https://jackydangelo.github.io/staticfeed/"
-
-PAGE_TITLE = "Gamification News"
-
-FOOTER_TEXT = (
-    'Feed per temi di gamification. '
-    'Parte del progetto "Questa è gamification!" '
-    "di Giacomo D'angelo."
-)
+SOURCE_RSS = _data["SOURCE_RSS"]
+DAYS_LIMIT = int(_data["DAYS_LIMIT"])
+REQUEST_TIMEOUT = float(_data["REQUEST_TIMEOUT"])
+URL = _data["URL"]
+PAGE_TITLE = _data["PAGE_TITLE"]
+FOOTER_TEXT = _data["FOOTER_TEXT"]
+TIMEZONE = ZoneInfo(_data["TIMEZONE_STR"])
