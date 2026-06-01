@@ -56,7 +56,7 @@ def parse_entry_date(entry) -> datetime | None:
         return parse_date(raw_date).astimezone(TIMEZONE)
 
     except Exception:
-        logging.exception(
+        logger.exception(
             "Error parsing date '%s' for: %s",
             raw_date,
             getattr(entry, "title", "N/A")
