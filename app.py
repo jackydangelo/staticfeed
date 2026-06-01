@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import escape
-from dateutil.parser import parse as parse_date
+from dateutil.parser import parse as parse_date, ParserError
 from email.utils import format_datetime
 
 from config import (
@@ -30,6 +30,9 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+class TemplateRenderError(Exception):
+    pass
 
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
     """
@@ -55,9 +58,9 @@ def parse_entry_date(entry) -> datetime | None:
     try:
         return parse_date(raw_date).astimezone(TIMEZONE)
 
-    except Exception:
-        logger.exception(
-            "Error parsing date '%s' for: %s",
+    except (ValueError, TypeError, ParserError):
+        logger.warning(
+            "Invalid date format: %r for entry: %s",
             raw_date,
             getattr(entry, "title", "N/A")
         )
@@ -256,13 +259,25 @@ def render_template(
     """
     Renders a Jinja template and writes the result to disk.
     """
+    try:
+        template = ENV.get_template(template_name)
     
-    template = ENV.get_template(template_name)
+        content = template.render(**context)
+    
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write(content)
 
-    content = template.render(**context)
+    except FileNotFoundError as e:
+        logger.exception("Template not found: %s", template_name)
+        raise TemplateRenderError("Missing template") from e
 
-    with open(output_path, "w", encoding="utf-8") as f:
-        f.write(content)
+    except OSError as e:
+        logger.exception("File write error: %s", output_path)
+        raise TemplateRenderError("Cannot write output file") from e
+
+    except Exception as e:
+        logger.exception("Unexpected render error")
+        raise TemplateRenderError("Render failed") from e
 
 
 def main():
@@ -291,8 +306,8 @@ def main():
             len(articles)
         )
 
-    except Exception:
-        logger.exception("Failed to save HTML")
+    except TemplateRenderError:
+        continue  # logging already handled in render_template
 
     try:
         render_template(
@@ -309,8 +324,8 @@ def main():
             len(articles)
         )
 
-    except Exception:
-        logger.exception("Failed to create RSS")
+    except TemplateRenderError:
+        continue  
 
 
 if __name__ == "__main__":
