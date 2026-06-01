@@ -3,15 +3,11 @@ import logging
 import requests
 
 from datetime import datetime, timedelta
-from zoneinfo import ZoneInfo
 from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader
 from xml.sax.saxutils import escape
 from dateutil.parser import parse as parse_date
-from email.utils import (
-    format_datetime,
-    parsedate_to_datetime
-)
+from email.utils import format_datetime
 
 from config import (
     SOURCE_RSS,
