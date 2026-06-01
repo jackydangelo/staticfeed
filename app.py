@@ -307,7 +307,7 @@ def main():
         )
 
     except TemplateRenderError:
-        continue  # logging already handled in render_template
+        pass  # logging already handled in render_template
 
     try:
         render_template(
@@ -325,7 +325,7 @@ def main():
         )
 
     except TemplateRenderError:
-        continue  
+        pass  
 
 
 if __name__ == "__main__":
