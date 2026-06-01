@@ -14,3 +14,4 @@ URL = _data["URL"]
 PAGE_TITLE = _data["PAGE_TITLE"]
 FOOTER_TEXT = _data["FOOTER_TEXT"]
 TIMEZONE = ZoneInfo(_data["TIMEZONE_STR"])
+USER_AGENT = _data["USER_AGENT"]
