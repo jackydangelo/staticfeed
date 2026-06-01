@@ -16,7 +16,8 @@ from config import (
     TIMEZONE,
     URL,
     PAGE_TITLE,
-    FOOTER_TEXT
+    FOOTER_TEXT,
+    USER_AGENT
 )
 
 # Shared Jinja environment reused across renders to leverage template caching.
@@ -30,6 +31,12 @@ logging.basicConfig(
 )
 
 logger = logging.getLogger(__name__)
+
+SESSION = requests.Session()
+
+SESSION.headers.update({
+    "User-Agent": USER_AGENT
+})
 
 class TemplateRenderError(Exception):
     pass
@@ -90,7 +97,7 @@ def fetch_feed(feed_url: str):
     """
     
     try:
-        response = requests.get(
+        response = SESSION.get(
             feed_url,
             timeout=REQUEST_TIMEOUT
         )
@@ -244,7 +251,7 @@ def prepare_rss_articles(articles):
         {
             "title": escape(a.get("title", "")),
             "link": escape(a.get("link", "")),
-            "summary": a.get("summary", ""),
+            "summary": escape(a.get("summary", "")),
             "published": a.get("published", "")
         }
         for a in articles
