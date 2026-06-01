@@ -1,6 +1,6 @@
 import feedparser
 import logging
-import socket
+import request
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
@@ -32,9 +32,6 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
-
-"""Timeout global net"""
-socket.setdefaulttimeout(float(REQUEST_TIMEOUT))
 
 
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
@@ -77,7 +74,25 @@ def normalize_url(url: str) -> str:
 
 
 def fetch_feed(feed_url: str):
-    feed = feedparser.parse(feed_url)
+
+    try:
+        response = requests.get(
+            feed_url,
+            timeout=REQUEST_TIMEOUT
+        )
+
+        response.raise_for_status()
+
+        feed = feedparser.parse(
+            response.content
+        )
+
+    except requests.RequestException:
+        logging.exception(
+            "Failed to download feed: %s",
+            feed_url
+        )
+        return []
 
     if feed.bozo:
         logging.warning(
@@ -89,7 +104,10 @@ def fetch_feed(feed_url: str):
     entries = getattr(feed, "entries", None)
 
     if not entries:
-        logging.warning("Empty feed: %s", feed_url)
+        logging.warning(
+            "Empty feed: %s",
+            feed_url
+        )
         return []
 
     return entries
