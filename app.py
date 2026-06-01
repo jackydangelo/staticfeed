@@ -307,7 +307,7 @@ def main():
         )
 
     except TemplateRenderError:
-        pass  # logging already handled in render_template
+        logger.error("HTML template rendering failed") 
 
     try:
         render_template(
@@ -325,7 +325,7 @@ def main():
         )
 
     except TemplateRenderError:
-        pass  
+        logger.error("RSS template rendering failed") 
 
 
 if __name__ == "__main__":
