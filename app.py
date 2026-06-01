@@ -161,51 +161,46 @@ def build_article(entry, source: str, keyword: str):
         "source": source,
         "keyword": keyword,
         "parsed_date": parsed_date,
-        "normalized_url": normalize_url(link),
     }
 
 
-def extract_articles(
-    feed_url: str,
-    cutoff_date: datetime,
-    custom_source_label: str,
-    keyword: str,
-    seen: set
-) -> list:
+def stream_raw_articles():
     """
-    Extracts valid articles from a single RSS feed.
-
-    Applies global consistency rules:
-    - removes outdated entries
-    - removes duplicates across all feeds
-    - normalizes article structure
+    Retrieves and normalizes raw entries from all configured RSS sources.
+    
+    Yields parsed article dictionaries one by one as a continuous stream.
     """
-    articles = []
+    for source_info in SOURCE_RSS:
+        for entry in fetch_feed(source_info["url"]):
+            article = build_article(
+                entry,
+                source_info["label"],
+                source_info["keyword"]
+            )
+            if article:
+                yield article
 
-    for entry in fetch_feed(feed_url):
 
-        article = build_article(
-            entry,
-            custom_source_label,
-            keyword
-        )
+def filter_by_date(articles, cutoff_date: datetime):
+    """
+    Filters out articles that are older than the specified cutoff date.
+    """
+    for article in articles:
+        if article["parsed_date"] >= cutoff_date:
+            yield article
 
-        if (
-            not article
-            or article["parsed_date"] < cutoff_date
-        ):
-            continue
 
-        normalized_url = article.pop("normalized_url")
-
-        if normalized_url in seen:
-            continue
-
-        seen.add(normalized_url)
-
-        articles.append(article)
-
-    return articles
+def filter_duplicates(articles, seen_set: set):
+    """
+    Removes duplicate articles from the stream based on their canonical URL.
+    """
+    for article in articles:
+        # Generate the canonical URL for comparison
+        url = normalize_url(article["link"])
+        
+        if url not in seen_set:
+            seen_set.add(url)
+            yield article
 
 
 def collect_articles(cutoff_date: datetime) -> list:
@@ -214,28 +209,18 @@ def collect_articles(cutoff_date: datetime) -> list:
 
     This is the single source of truth for RSS ingestion and normalization.
     """
-    
-    all_articles = []
     seen = set()
 
-    for source_info in SOURCE_RSS:
-
-        all_articles.extend(
-            extract_articles(
-                feed_url=source_info["url"],
-                custom_source_label=source_info["label"],
-                keyword=source_info["keyword"],
-                cutoff_date=cutoff_date,
-                seen=seen
-            )
-        )
+    raw_stream = stream_raw_articles()
+    filtered_by_date = filter_by_date(raw_stream, cutoff_date)
+    final_stream = filter_duplicates(filtered_by_date, seen)
+    all_articles = list(final_stream)
 
     all_articles.sort(
         key=lambda x: x["parsed_date"],
         reverse=True
     )
 
-    # Remove internal field used only for sorting.
     for article in all_articles:
         article.pop("parsed_date", None)
 
