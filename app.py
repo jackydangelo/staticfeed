@@ -19,7 +19,7 @@ from config import (
     FOOTER_TEXT
 )
 
-"""A module-level shared Jinja environment to avoid unnecessary recreations and reuse the internal template cache."""
+# Shared Jinja environment reused across renders to leverage template caching.
 ENV = Environment(
     loader=FileSystemLoader("templates")
 )
@@ -29,14 +29,21 @@ logging.basicConfig(
     format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
+logger = logging.getLogger(__name__)
 
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
-    """Returns the cutoff date for filtering articles."""
+    """
+    Computes the lower bound timestamp used to filter outdated articles.
+    """
     return now - timedelta(days=days_limit)
 
 
 def parse_entry_date(entry) -> datetime | None:
+    """
+    Extracts a normalized publication datetime from an RSS entry.
 
+    Returns None when the entry does not contain a valid or parsable date.
+    """
     raw_date = (
         getattr(entry, "published", None)
         or getattr(entry, "updated", None)
@@ -58,6 +65,9 @@ def parse_entry_date(entry) -> datetime | None:
 
 
 def normalize_url(url: str) -> str:
+    """
+    Produces a canonical URL used for article deduplication.
+    """
     parts = urlsplit(url)
 
     return urlunsplit((
@@ -70,7 +80,12 @@ def normalize_url(url: str) -> str:
 
 
 def fetch_feed(feed_url: str):
+    """
+    Retrieves RSS entries from a remote feed source.
 
+    Returns an empty list if the feed cannot be fetched or parsed.
+    """
+    
     try:
         response = requests.get(
             feed_url,
@@ -84,14 +99,14 @@ def fetch_feed(feed_url: str):
         )
 
     except requests.RequestException:
-        logging.exception(
+        logger.exception(
             "Failed to download feed: %s",
             feed_url
         )
         return []
 
     if feed.bozo:
-        logging.warning(
+        logger.warning(
             "Malformed feed: %s (%s)",
             feed_url,
             feed.bozo_exception
@@ -100,7 +115,7 @@ def fetch_feed(feed_url: str):
     entries = getattr(feed, "entries", None)
 
     if not entries:
-        logging.warning(
+        logger.warning(
             "Empty feed: %s",
             feed_url
         )
@@ -110,7 +125,12 @@ def fetch_feed(feed_url: str):
 
 
 def build_article(entry, source: str, keyword: str):
+    """
+    Builds a normalized article object from a raw RSS entry.
 
+    Returns None if required fields are missing or invalid.
+    """
+    
     title = getattr(entry, "title", "").strip()
     link = getattr(entry, "link", "").strip()
 
@@ -142,7 +162,14 @@ def extract_articles(
     keyword: str,
     seen: set
 ) -> list:
+    """
+    Extracts valid articles from a single RSS feed.
 
+    Applies global consistency rules:
+    - removes outdated entries
+    - removes duplicates across all feeds
+    - normalizes article structure
+    """
     articles = []
 
     for entry in fetch_feed(feed_url):
@@ -172,7 +199,12 @@ def extract_articles(
 
 
 def collect_articles(cutoff_date: datetime) -> list:
+    """
+    Produces the unified article dataset used by all output formats.
 
+    This is the single source of truth for RSS ingestion and normalization.
+    """
+    
     all_articles = []
     seen = set()
 
@@ -193,7 +225,7 @@ def collect_articles(cutoff_date: datetime) -> list:
         reverse=True
     )
 
-    """Removes the technical field used solely for sorting. This is done to separate the technical data from the data actually used by the HTML."""
+    # Remove internal field used only for sorting.
     for article in all_articles:
         article.pop("parsed_date", None)
 
@@ -201,7 +233,10 @@ def collect_articles(cutoff_date: datetime) -> list:
 
 
 def prepare_rss_articles(articles):
-
+    """
+    Prepares article data for RSS output by sanitizing fields
+    and ensuring XML-safe content.
+    """
     return [
         {
             "title": escape(a.get("title", "")),
@@ -218,7 +253,10 @@ def render_template(
     output_path: str,
     **context
 ) -> None:
-
+    """
+    Renders a Jinja template and writes the result to disk.
+    """
+    
     template = ENV.get_template(template_name)
 
     content = template.render(**context)
@@ -248,13 +286,13 @@ def main():
             articles=articles
         )
 
-        logging.info(
+        logger.info(
             "Collected %d articles - HTML created: docs/index.html",
             len(articles)
         )
 
     except Exception:
-        logging.exception("Failed to save HTML")
+        logger.exception("Failed to save HTML")
 
     try:
         render_template(
@@ -266,13 +304,13 @@ def main():
             articles=prepare_rss_articles(articles)
         )
 
-        logging.info(
+        logger.info(
             "Collected %d articles - RSS created: docs/rss.xml",
             len(articles)
         )
 
     except Exception:
-        logging.exception("Failed to create RSS")
+        logger.exception("Failed to create RSS")
 
 
 if __name__ == "__main__":
