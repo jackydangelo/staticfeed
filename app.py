@@ -1,6 +1,6 @@
 import feedparser
 import logging
-import request
+import requests
 
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
