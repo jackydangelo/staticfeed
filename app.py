@@ -314,7 +314,7 @@ def get_output_configuration(
                 "page_title": PAGE_TITLE,
                 "footer_text": FOOTER_TEXT,
                 "updated_at": now.strftime("%d/%m/%Y %H:%M"),
-                "articles": articles
+                "articles": articles,
                 "sources": SOURCE_RSS
             }
         },
