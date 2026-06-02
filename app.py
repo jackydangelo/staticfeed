@@ -4,8 +4,7 @@ import requests
 
 from datetime import datetime, timedelta
 from urllib.parse import urlsplit, urlunsplit
-from jinja2 import Environment, FileSystemLoader
-from xml.sax.saxutils import escape
+from jinja2 import Environment, FileSystemLoader, select_autoescape
 from dateutil.parser import parse as parse_date, ParserError
 from email.utils import format_datetime
 
@@ -22,7 +21,8 @@ from config import (
 
 # Shared Jinja environment reused across renders to leverage template caching.
 ENV = Environment(
-    loader=FileSystemLoader("templates")
+    loader=FileSystemLoader("templates"),
+    autoescape=select_autoescape(["html", "xml", "xhtml"])
 )
 
 logging.basicConfig(
@@ -227,22 +227,6 @@ def collect_articles(cutoff_date: datetime) -> list:
     return all_articles
 
 
-def prepare_rss_articles(articles):
-    """
-    Prepares article data for RSS output by sanitizing fields
-    and ensuring XML-safe content.
-    """
-    return [
-        {
-            "title": escape(a.get("title", "")),
-            "link": escape(a.get("link", "")),
-            "summary": escape(a.get("summary", "")),
-            "published": a.get("published", "")
-        }
-        for a in articles
-    ]
-
-
 def render_template(
     template_name: str,
     output_path: str,
@@ -308,7 +292,7 @@ def main():
             page_title=PAGE_TITLE,
             url=URL,
             last_build_date=format_datetime(now),
-            articles=prepare_rss_articles(articles)
+            articles=articles
         )
 
         logger.info(
