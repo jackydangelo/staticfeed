@@ -305,6 +305,7 @@ def get_output_configuration(
     Defines the supported output formats and their respective Jinja contexts.
     Easily extensible with new formats (e.g., JSON Feed, Sitemap).
     """
+    formatted_now = now.strftime("%d/%m/%Y %H:%M")
     return [
         {
             "template": "homepage.html",
@@ -313,7 +314,7 @@ def get_output_configuration(
             "context": {
                 "page_title": PAGE_TITLE,
                 "footer_text": FOOTER_TEXT,
-                "updated_at": now.strftime("%d/%m/%Y %H:%M"),
+                "updated_at": formatted_now,
                 "articles": articles,
                 "sources": SOURCE_RSS
             }
