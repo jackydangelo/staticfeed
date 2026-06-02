@@ -64,6 +64,12 @@ class Article:
     def published_display(self) -> str:
         return self.published_at.strftime("%d/%m/%Y %H:%M")
 
+    @property
+    def rss_description(self) -> str:
+        return (
+            f"Keyword: {self.keyword} | "
+            f"Fonte: {self.source}"
+        )
 
 class TemplateRenderError(Exception):
     pass
