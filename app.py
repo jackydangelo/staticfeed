@@ -2,7 +2,9 @@ import feedparser
 import logging
 import requests
 
+from dataclasses import dataclass
 from datetime import datetime, timedelta
+from collections.abc import Iterable, Iterator
 from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from dateutil.parser import parse as parse_date, ParserError
@@ -38,8 +40,34 @@ SESSION.headers.update({
     "User-Agent": USER_AGENT
 })
 
+
+@dataclass(slots=True)
+class Article:
+    """
+    Canonical article model used across the whole pipeline.
+
+    published_at is the single source of truth for article dates.
+    """
+
+    title: str
+    link: str
+    summary: str
+    source: str
+    keyword: str
+    published_at: datetime
+
+    @property
+    def published(self) -> str:
+        return format_datetime(self.published_at)
+
+    @property
+    def published_display(self) -> str:
+        return self.published_at.strftime("%d/%m/%Y %H:%M")
+
+
 class TemplateRenderError(Exception):
     pass
+
 
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
     """
@@ -95,7 +123,7 @@ def fetch_feed(feed_url: str):
 
     Returns an empty list if the feed cannot be fetched or parsed.
     """
-    
+
     try:
         response = SESSION.get(
             feed_url,
@@ -134,40 +162,42 @@ def fetch_feed(feed_url: str):
     return entries
 
 
-def build_article(entry, source: str, keyword: str):
+def build_article(
+    entry,
+    source: str,
+    keyword: str
+) -> Article | None:
     """
     Builds a normalized article object from a raw RSS entry.
 
     Returns None if required fields are missing or invalid.
     """
-    
+
     title = getattr(entry, "title", "").strip()
     link = getattr(entry, "link", "").strip()
 
     if not title or not link:
         return None
 
-    parsed_date = parse_entry_date(entry)
+    published_at = parse_entry_date(entry)
 
-    if not parsed_date:
+    if not published_at:
         return None
 
-    return {
-        "title": title,
-        "link": link,
-        "summary": getattr(entry, "summary", ""),
-        "published": format_datetime(parsed_date),
-        "published_display": parsed_date.strftime("%d/%m/%Y %H:%M"),
-        "source": source,
-        "keyword": keyword,
-        "parsed_date": parsed_date,
-    }
+    return Article(
+        title=title,
+        link=link,
+        summary=getattr(entry, "summary", ""),
+        source=source,
+        keyword=keyword,
+        published_at=published_at
+    )
 
 
-def stream_raw_articles():
+def stream_raw_articles() -> Iterator[Article]:
     """
     Retrieves and normalizes raw entries from all configured RSS sources.
-    
+
     Yields parsed article dictionaries one by one as a continuous stream.
     """
     for source_info in SOURCE_RSS:
@@ -177,52 +207,57 @@ def stream_raw_articles():
                 source_info["label"],
                 source_info["keyword"]
             )
+
             if article:
                 yield article
 
 
-def filter_by_date(articles, cutoff_date: datetime):
+def filter_by_date(
+    articles: Iterable[Article],
+    cutoff_date: datetime
+) -> Iterator[Article]:
     """
     Filters out articles that are older than the specified cutoff date.
     """
     for article in articles:
-        if article["parsed_date"] >= cutoff_date:
+        if article.published_at >= cutoff_date:
             yield article
 
 
-def filter_duplicates(articles, seen_set: set):
+def filter_duplicates(
+    articles: Iterable[Article],
+    seen_set: set[str]
+) -> Iterator[Article]:
     """
     Removes duplicate articles from the stream based on their canonical URL.
     """
     for article in articles:
         # Generate the canonical URL for comparison
-        url = normalize_url(article["link"])
-        
+        url = normalize_url(article.link)
+
         if url not in seen_set:
             seen_set.add(url)
             yield article
 
 
-def collect_articles(cutoff_date: datetime) -> list:
+def collect_articles(cutoff_date: datetime) -> list[Article]:
     """
     Produces the unified article dataset used by all output formats.
 
     This is the single source of truth for RSS ingestion and normalization.
     """
-    seen = set()
+    seen: set[str] = set()
 
     raw_stream = stream_raw_articles()
     filtered_by_date = filter_by_date(raw_stream, cutoff_date)
     final_stream = filter_duplicates(filtered_by_date, seen)
+
     all_articles = list(final_stream)
 
     all_articles.sort(
-        key=lambda x: x["parsed_date"],
+        key=lambda article: article.published_at,
         reverse=True
     )
-
-    for article in all_articles:
-        article.pop("parsed_date", None)
 
     return all_articles
 
@@ -237,9 +272,9 @@ def render_template(
     """
     try:
         template = ENV.get_template(template_name)
-    
+
         content = template.render(**context)
-    
+
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
 
@@ -256,7 +291,10 @@ def render_template(
         raise TemplateRenderError("Render failed") from e
 
 
-def get_output_configuration(now: datetime, articles: list) -> list[dict]:
+def get_output_configuration(
+    now: datetime,
+    articles: list[Article]
+) -> list[dict]:
     """
     Defines the supported output formats and their respective Jinja contexts.
     Easily extensible with new formats (e.g., JSON Feed, Sitemap).
@@ -309,15 +347,17 @@ def main():
                 output_path=output["path"],
                 **output["context"]
             )
+
             logger.info(
                 "Collected %d articles - %s created: %s",
                 num_articles,
                 output["type_label"],
                 output["path"]
             )
+
         except TemplateRenderError:
             logger.error(
-                "%s template rendering failed", 
+                "%s template rendering failed",
                 output["type_label"]
             )
 
