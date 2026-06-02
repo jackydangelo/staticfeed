@@ -7,7 +7,7 @@ from datetime import datetime, timedelta
 from collections.abc import Iterable, Iterator
 from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from dateutil.parser import parse as parse_date, ParserError
+from dateutil.parser import parse as parse_date
 from email.utils import format_datetime
 
 from config import (
@@ -93,7 +93,7 @@ def parse_entry_date(entry) -> datetime | None:
     try:
         return parse_date(raw_date).astimezone(TIMEZONE)
 
-    except (ValueError, TypeError, ParserError):
+    except (ValueError, TypeError):
         logger.warning(
             "Invalid date format: %r for entry: %s",
             raw_date,
