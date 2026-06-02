@@ -309,13 +309,24 @@ def get_output_configuration(
         {
             "template": "homepage.html",
             "path": "docs/index.html",
-            "type_label": "HTML",
+            "type_label": "HTML home",
             "context": {
                 "page_title": PAGE_TITLE,
                 "footer_text": FOOTER_TEXT,
                 "updated_at": now.strftime("%d/%m/%Y %H:%M"),
                 "articles": articles,
                 "sources": SOURCE_RSS
+            }
+        },
+        {
+            "template": "sources.html",
+            "path": "docs/sources.html",
+            "type_label": "HTML sources",
+            "context": {
+                "page_title": PAGE_TITLE,
+                "footer_text": FOOTER_TEXT,
+                "updated_at": formatted_now,
+                "sources": SOURCE_RSS  
             }
         },
         {
