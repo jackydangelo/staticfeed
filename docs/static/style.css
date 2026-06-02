@@ -43,3 +43,65 @@ h1 {
     color: #777;
     font-size: 14px;
 }
+/* --- Source table --- */
+.sources-card {
+    background: white;
+    padding: 24px;
+    margin-bottom: 30px;
+    border-radius: 10px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.sources-card h2 {
+    margin-top: 0;
+    color: #222;
+    font-size: 20px;
+    margin-bottom: 16px;
+}
+
+.sources-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 15px;
+}
+
+.sources-table th {
+    background: #f9f9f9;
+    color: #222;
+    font-weight: 600;
+    padding: 12px 10px;
+    border-bottom: 2px solid #eee;
+}
+
+.sources-table td {
+    padding: 12px 10px;
+    border-bottom: 1px solid #eee;
+    color: #444;
+}
+
+.sources-table tr:last-child td {
+    border-bottom: none;
+}
+
+.sources-table a {
+    text-decoration: none;
+    color: #1565c0;
+}
+
+.sources-table a:hover {
+    text-decoration: underline;
+}
+
+.keyword-badge {
+    background: #eef2f7;
+    color: #1565c0;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
