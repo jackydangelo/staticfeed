@@ -315,8 +315,7 @@ def get_output_configuration(
                 "page_title": PAGE_TITLE,
                 "footer_text": FOOTER_TEXT,
                 "updated_at": formatted_now,
-                "articles": articles,
-                "sources": SOURCE_RSS
+                "articles": articles
             }
         },
         {
