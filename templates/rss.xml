@@ -12,7 +12,7 @@
         <title>{{ a.title }}</title>
         <link>{{ a.link }}</link>
         <guid isPermaLink="true">{{ a.link }}</guid>
-        <description><![CDATA[{{ a.summary }}]]></description>
+        <description>{{ article.rss_description }}</description>
         <pubDate>{{ a.published }}</pubDate>
     </item>
     {% endfor %}
