@@ -256,8 +256,38 @@ def render_template(
         raise TemplateRenderError("Render failed") from e
 
 
-def main():
+def get_output_configuration(now: datetime, articles: list) -> list[dict]:
+    """
+    Defines the supported output formats and their respective Jinja contexts.
+    Easily extensible with new formats (e.g., JSON Feed, Sitemap).
+    """
+    return [
+        {
+            "template": "homepage.html",
+            "path": "docs/index.html",
+            "type_label": "HTML",
+            "context": {
+                "page_title": PAGE_TITLE,
+                "footer_text": FOOTER_TEXT,
+                "updated_at": now.strftime("%d/%m/%Y %H:%M"),
+                "articles": articles
+            }
+        },
+        {
+            "template": "rss.xml",
+            "path": "docs/rss.xml",
+            "type_label": "RSS",
+            "context": {
+                "page_title": PAGE_TITLE,
+                "url": URL,
+                "last_build_date": format_datetime(now),
+                "articles": articles
+            }
+        }
+    ]
 
+
+def main():
     now = datetime.now(TIMEZONE)
 
     cutoff_date = get_cutoff_date(
@@ -265,43 +295,31 @@ def main():
         days_limit=DAYS_LIMIT
     )
 
+    # 1. Ingestion and normalization (Stream-based pipeline)
     articles = collect_articles(cutoff_date)
+    num_articles = len(articles)
 
-    try:
-        render_template(
-            template_name="homepage.html",
-            output_path="docs/index.html",
-            page_title=PAGE_TITLE,
-            footer_text=FOOTER_TEXT,
-            updated_at=now.astimezone(TIMEZONE).strftime("%d/%m/%Y %H:%M"),
-            articles=articles
-        )
+    # 2. Output generation (Data-Driven Architecture)
+    outputs = get_output_configuration(now, articles)
 
-        logger.info(
-            "Collected %d articles - HTML created: docs/index.html",
-            len(articles)
-        )
-
-    except TemplateRenderError:
-        logger.error("HTML template rendering failed") 
-
-    try:
-        render_template(
-            template_name="rss.xml",
-            output_path="docs/rss.xml",
-            page_title=PAGE_TITLE,
-            url=URL,
-            last_build_date=format_datetime(now),
-            articles=articles
-        )
-
-        logger.info(
-            "Collected %d articles - RSS created: docs/rss.xml",
-            len(articles)
-        )
-
-    except TemplateRenderError:
-        logger.error("RSS template rendering failed") 
+    for output in outputs:
+        try:
+            render_template(
+                template_name=output["template"],
+                output_path=output["path"],
+                **output["context"]
+            )
+            logger.info(
+                "Collected %d articles - %s created: %s",
+                num_articles,
+                output["type_label"],
+                output["path"]
+            )
+        except TemplateRenderError:
+            logger.error(
+                "%s template rendering failed", 
+                output["type_label"]
+            )
 
 
 if __name__ == "__main__":
