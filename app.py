@@ -274,7 +274,7 @@ def render_template(
 
 def main():
 
-    now = datetime.now().astimezone()
+    now = datetime.now(TIMEZONE)
 
     cutoff_date = get_cutoff_date(
         now=now,
