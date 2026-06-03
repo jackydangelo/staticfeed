@@ -9,6 +9,8 @@ from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from dateutil.parser import parse as parse_date
 from email.utils import format_datetime
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from config import (
     SOURCE_RSS,
@@ -34,12 +36,35 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
+retry_strategy = Retry(
+    total=5,
+    connect=3,
+    read=3,
+    status=5,
+    backoff_factor=2,
+    status_forcelist=[
+        429,  # Too Many Requests
+        500,  # Internal Server Error
+        502,  # Bad Gateway
+        503,  # Service Unavailable
+        504,  # Gateway Timeout
+    ],
+    allowed_methods=["GET"],
+    respect_retry_after_header=True
+)
+
+adapter = HTTPAdapter(
+    max_retries=retry_strategy
+)
+
 SESSION = requests.Session()
+
+SESSION.mount("https://", adapter)
+SESSION.mount("http://", adapter)
 
 SESSION.headers.update({
     "User-Agent": USER_AGENT
 })
-
 
 @dataclass(slots=True)
 class Article:
@@ -144,8 +169,9 @@ def fetch_feed(feed_url: str):
 
     except requests.RequestException:
         logger.exception(
-            "Failed to download feed: %s",
-            feed_url
+            "Failed to download feed: %s (%s)",
+            feed_url,
+            exc
         )
         return []
 
