@@ -167,7 +167,7 @@ def fetch_feed(feed_url: str):
             response.content
         )
 
-    except requests.RequestException:
+    except requests.RequestException as exc:
         logger.exception(
             "Failed to download feed: %s (%s)",
             feed_url,
