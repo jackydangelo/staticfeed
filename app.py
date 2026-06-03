@@ -150,7 +150,7 @@ def fetch_feed(feed_url: str):
         response.raise_for_status()
 
         feed = feedparser.parse(
-            response.text
+            response.content
         )
 
     except requests.RequestException as exc:
