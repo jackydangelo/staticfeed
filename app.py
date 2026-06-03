@@ -375,13 +375,13 @@ def main():
                 **output["context"]
             )
 
-        logger.info(
-            "%s created: %s (%d %s)",
-            output["type_label"],
-            output["path"],
-            output["content_count"],
-            output["content_label"]
-        )
+            logger.info(
+                "%s created: %s (%d %s)",
+                output["type_label"],
+                output["path"],
+                output["content_count"],
+                output["content_label"]
+            )
 
         except TemplateRenderError:
             logger.error(
