@@ -380,7 +380,7 @@ def main():
                 output["type_label"],
                 output["path"],
                 output["content_count"],
-                output["content_label"]
+                output["type_label"]
             )
 
         except TemplateRenderError:
