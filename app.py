@@ -311,6 +311,7 @@ def get_output_configuration(
             "template": "homepage.html",
             "path": "docs/index.html",
             "type_label": "HTML home",
+            "content_count": len(articles),
             "context": {
                 "page_title": PAGE_TITLE,
                 "footer_text": FOOTER_TEXT,
@@ -322,6 +323,7 @@ def get_output_configuration(
             "template": "sources.html",
             "path": "docs/sources.html",
             "type_label": "HTML sources",
+            "content_count": len(SOURCE_RSS),
             "context": {
                 "page_title": PAGE_TITLE,
                 "footer_text": FOOTER_TEXT,
@@ -333,6 +335,7 @@ def get_output_configuration(
             "template": "rss.xml",
             "path": "docs/rss.xml",
             "type_label": "RSS",
+            "content_count": len(articles),
             "context": {
                 "page_title": PAGE_TITLE,
                 "url": URL,
@@ -355,6 +358,12 @@ def main():
     articles = collect_articles(cutoff_date)
     num_articles = len(articles)
 
+    logger.info(
+        "Collected %d articles from %d RSS sources",
+        num_articles,
+        len(SOURCE_RSS)
+    )
+
     # 2. Output generation (Data-Driven Architecture)
     outputs = get_output_configuration(now, articles)
 
@@ -366,12 +375,13 @@ def main():
                 **output["context"]
             )
 
-            logger.info(
-                "Collected %d articles - %s created: %s",
-                num_articles,
-                output["type_label"],
-                output["path"]
-            )
+        logger.info(
+            "%s created: %s (%d %s)",
+            output["type_label"],
+            output["path"],
+            output["content_count"],
+            output["content_label"]
+        )
 
         except TemplateRenderError:
             logger.error(
