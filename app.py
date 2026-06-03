@@ -20,7 +20,8 @@ from config import (
     URL,
     PAGE_TITLE,
     FOOTER_TEXT,
-    USER_AGENT
+    USER_AGENT,
+    RETRY_CONFIG
 )
 
 # Shared Jinja environment reused across renders to leverage template caching.
@@ -36,22 +37,7 @@ logging.basicConfig(
 
 logger = logging.getLogger(__name__)
 
-retry_strategy = Retry(
-    total=5,
-    connect=3,
-    read=3,
-    status=5,
-    backoff_factor=2,
-    status_forcelist=[
-        429,  # Too Many Requests
-        500,  # Internal Server Error
-        502,  # Bad Gateway
-        503,  # Service Unavailable
-        504,  # Gateway Timeout
-    ],
-    allowed_methods=["GET"],
-    respect_retry_after_header=True
-)
+retry_strategy = Retry(**RETRY_CONFIG)
 
 adapter = HTTPAdapter(
     max_retries=retry_strategy
