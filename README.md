@@ -134,7 +134,7 @@ Open `config.json` and update the general settings or add your own RSS sources t
   "DAYS_LIMIT": 7,
   "REQUEST_TIMEOUT": 20,
   "TIMEZONE_STR": "Europe/Rome",
-  "URL": "[https://your-username.github.io/staticfeed/](https://your-username.github.io/staticfeed/)",
+  "URL": "https://your-username.github.io/staticfeed/",
   "PAGE_TITLE": "My Custom News",
   "FOOTER_TEXT": " have forked this repository!",
   "SOURCE_RSS": [
