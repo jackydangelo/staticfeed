@@ -183,29 +183,38 @@ def fetch_feed(feed_url: str):
 def process_source(source_info: dict) -> list[Article]:
     """
     Download and normalize all articles from a single RSS feed.
+    Garantisce di non sollevare mai eccezioni verso il thread principale.
     """
-    logger.info(
-        "Fetching: %s",
-        source_info["label"]
-    )    
-
+    logger.info("Fetching: %s", source_info["label"])    
     articles: list[Article] = []
 
-    for entry in fetch_feed(source_info["url"]):
-        article = build_article(
-            entry,
-            source_info["label"],
-            source_info["keyword"]
+    try:
+        entries = fetch_feed(source_info["url"])
+        
+        for entry in entries:
+            article = build_article(
+                entry,
+                source_info["label"],
+                source_info["keyword"]
+            )
+            if article:
+                articles.append(article)
+
+        logger.info(
+            "Fetched %d articles from %s",
+            len(articles),
+            source_info["label"]
         )
 
-        if article:
-            articles.append(article)
-
-    logger.info(
-        "Fetched %d articles from %s",
-        len(articles),
-        source_info["label"]
-    )
+    except Exception as exc:
+        # Atomic exception
+        logger.error(
+            "Unexpected error processing source %s: %s", 
+            source_info["label"], 
+            exc, 
+            exc_info=True
+        )
+        return []
 
     return articles
 
@@ -244,10 +253,9 @@ def build_article(
 
 def stream_raw_articles() -> Iterator[Article]:
     """
-    Retrieves and normalizes RSS entries concurrently.
+    Retrieves and normalizes RSS entries concurrently with safe error handling.
     """
-
-    max_workers = max(1,min(16, len(SOURCE_RSS)))
+    max_workers = max(1, min(16, len(SOURCE_RSS)))
 
     with ThreadPoolExecutor(
         max_workers=max_workers,
@@ -261,15 +269,14 @@ def stream_raw_articles() -> Iterator[Article]:
 
         for future in as_completed(futures):
             source_info = futures[future]
-
             try:
                 yield from future.result()
 
             except Exception:
                 logger.exception(
-                    "Unexpected error while processing %s",
+                    "Critical thread failure for %s",
                     source_info["label"]
-                )            
+                )         
 
 def filter_by_date(
     articles: Iterable[Article],
