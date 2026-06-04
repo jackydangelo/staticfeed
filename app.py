@@ -11,6 +11,7 @@ from dateutil.parser import parse as parse_date
 from email.utils import format_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from config import (
     SOURCE_RSS,
@@ -179,6 +180,35 @@ def fetch_feed(feed_url: str):
 
     return entries
 
+def process_source(source_info: dict) -> list[Article]:
+    """
+    Download and normalize all articles from a single RSS feed.
+    """
+    logger.info(
+        "Fetching: %s",
+        source_info["label"]
+    )    
+
+    articles: list[Article] = []
+
+    for entry in fetch_feed(source_info["url"]):
+        article = build_article(
+            entry,
+            source_info["label"],
+            source_info["keyword"]
+        )
+
+        if article:
+            articles.append(article)
+
+    logger.info(
+        "Fetched %d articles from %s",
+        len(articles),
+        source_info["label"]
+    )
+
+    return articles
+
 
 def build_article(
     entry,
@@ -214,21 +244,32 @@ def build_article(
 
 def stream_raw_articles() -> Iterator[Article]:
     """
-    Retrieves and normalizes raw entries from all configured RSS sources.
-
-    Yields parsed article dictionaries one by one as a continuous stream.
+    Retrieves and normalizes RSS entries concurrently.
     """
-    for source_info in SOURCE_RSS:
-        for entry in fetch_feed(source_info["url"]):
-            article = build_article(
-                entry,
-                source_info["label"],
-                source_info["keyword"]
-            )
 
-            if article:
-                yield article
+    max_workers = max(1,min(16, len(SOURCE_RSS)))
 
+    with ThreadPoolExecutor(
+        max_workers=max_workers,
+        thread_name_prefix="rss"
+    ) as executor:
+
+        futures = {
+            executor.submit(process_source, source_info): source_info
+            for source_info in SOURCE_RSS
+        }
+
+        for future in as_completed(futures):
+            source_info = futures[future]
+
+            try:
+                yield from future.result()
+
+            except Exception:
+                logger.exception(
+                    "Unexpected error while processing %s",
+                    source_info["label"]
+                )            
 
 def filter_by_date(
     articles: Iterable[Article],
