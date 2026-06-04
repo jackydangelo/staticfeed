@@ -183,9 +183,12 @@ def fetch_feed(feed_url: str):
 def process_source(source_info: dict) -> list[Article]:
     """
     Download and normalize all articles from a single RSS feed.
-    Garantisce di non sollevare mai eccezioni verso il thread principale.
     """
-    logger.info("Fetching: %s", source_info["label"])    
+    logger.info(
+        "Fetching: %s: %s", 
+        source_info["label"],
+        source_info["keyword"]
+    )    
     articles: list[Article] = []
 
     try:
@@ -201,9 +204,10 @@ def process_source(source_info: dict) -> list[Article]:
                 articles.append(article)
 
         logger.info(
-            "Fetched %d articles from %s",
+            "Fetched %d articles from %s: %s",
             len(articles),
-            source_info["label"]
+            source_info["label"],
+            source_info["keyword"]
         )
 
     except Exception as exc:
