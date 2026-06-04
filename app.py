@@ -211,7 +211,7 @@ def process_source(source_info: dict) -> list[Article]:
         )
 
     except Exception as exc:
-        # Atomic exception
+        # Prevent a single failing feed from breaking the entire orchestration loop.
         logger.error(
             "Unexpected error processing source %s: %s", 
             source_info["label"], 
