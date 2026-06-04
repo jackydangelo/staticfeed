@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://img.shields.io/github/stars/jackydangelo/gamification-news?style=for-the-badge&logo=github&labelColor=000000&color=f59e0b" />
+  <img src="https://img.shields.io/github/stars/jackydangelo/staticfeed?style=for-the-badge&logo=github&labelColor=000000&color=f59e0b" />
   <img src="https://img.shields.io/badge/PRs-Welcome-10b981?style=for-the-badge&logo=github&labelColor=000000" />
 </p>
 
