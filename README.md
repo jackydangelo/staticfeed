@@ -73,6 +73,13 @@ No backend services required.
 Unlike naive scrapers that load all data into memory, this pipeline processes articles as a continuous stream using Python generators (`yield`). This ensures a near-zero memory footprint even when scaling to dozens of high-traffic feeds.
 
 
+### Concurrency & High Performance
+
+The pipeline utilizes Python's `ThreadPoolExecutor` to fetch and process multiple RSS feeds concurrently. Since network requests are highly I/O-bound, this architecture bypasses Python's Global Interpreter Lock (GIL) limitations. 
+
+Instead of waiting for each feed to download sequentially, dozens of remote sources are queried in parallel within seconds. Additionally, the worker pool size dynamically auto-tunes based on your source count to prevent resource wasting or accidental rate-limiting.
+
+
 ### Smart Deduplication
 
 The deduplication layer normalizes URLs to avoid duplicate articles across feeds.
