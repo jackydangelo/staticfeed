@@ -55,12 +55,6 @@ SESSION.headers.update({
 
 @dataclass(slots=True)
 class Article:
-    """
-    Canonical article model used across the whole pipeline.
-
-    published_at is the single source of truth for article dates.
-    """
-
     title: str
     link: str
     summary: str
@@ -82,6 +76,13 @@ class Article:
             f"Keyword: {self.keyword} | "
             f"Fonte: {self.source}"
         )
+
+
+@dataclass(frozen=True, slots=True)
+class FeedSource:
+    url: str
+    label: str
+    keyword: str
 
 class TemplateRenderError(Exception):
     pass
@@ -180,25 +181,25 @@ def fetch_feed(feed_url: str):
 
     return entries
 
-def process_source(source_info: dict) -> list[Article]:
+def process_source(source_info: FeedSource) -> list[Article]:
     """
     Download and normalize all articles from a single RSS feed.
     """
     logger.info(
         "Fetching: %s: %s", 
-        source_info["label"],
-        source_info["keyword"]
+        source_info.label,
+        source_info.keyword
     )    
     articles: list[Article] = []
 
     try:
-        entries = fetch_feed(source_info["url"])
+        entries = fetch_feed(source_info.url)
         
         for entry in entries:
             article = build_article(
                 entry,
-                source_info["label"],
-                source_info["keyword"]
+                source_info.label,
+                source_info.keyword
             )
             if article:
                 articles.append(article)
@@ -206,15 +207,15 @@ def process_source(source_info: dict) -> list[Article]:
         logger.info(
             "Fetched %d articles from %s: %s",
             len(articles),
-            source_info["label"],
-            source_info["keyword"]
+            source_info.label,
+            source_info.keyword
         )
 
     except Exception as exc:
         # Prevent a single failing feed from breaking the entire orchestration loop.
         logger.error(
             "Unexpected error processing source %s: %s", 
-            source_info["label"], 
+            source_info.label, 
             exc, 
             exc_info=True
         )
@@ -279,7 +280,7 @@ def stream_raw_articles() -> Iterator[Article]:
             except Exception:
                 logger.exception(
                     "Critical thread failure for %s",
-                    source_info["label"]
+                    source_info.label
                 )         
 
 def filter_by_date(
