@@ -402,24 +402,25 @@ def main():
     outputs = get_output_configuration(now, articles)
 
     for output in outputs:
-        render_template(
-            template_name=output.template,
-            output_path=output.path,
-            **output.context
-        )
-
+        try:
+            render_template(
+                template_name=output.template,
+                output_path=output.path,
+                **output.context
+            )
+    
             logger.info(
                 "%s created: %s (%d %s)",
-                output["type_label"],
-                output["path"],
-                output["content_count"],
-                output["type_label"]
+                output.type_label,
+                output.path,
+                output.content_count,
+                output.type_label
             )
-
+    
         except TemplateRenderError:
             logger.error(
                 "%s template rendering failed",
-                output["type_label"]
+                output.type_label
             )
 
 
