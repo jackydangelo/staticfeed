@@ -335,50 +335,52 @@ def get_output_configuration(
     now: datetime,
     articles: list[Article]
 ) -> list[OutputConfig]:
+
     """
     Defines the supported output formats and their respective Jinja contexts.
     Easily extensible with new formats (e.g., JSON Feed, Sitemap).
     """
-    formatted_now = now.strftime("%d/%m/%Y %H:%M")
-return [
-    OutputConfig(
-        template="homepage.html",
-        path="docs/index.html",
-        type_label="HTML home",
-        content_count=len(articles),
-        context={
-            "page_title": PAGE_TITLE,
-            "footer_text": FOOTER_TEXT,
-            "updated_at": formatted_now,
-            "articles": articles
-        }
-    ),
-    OutputConfig(
-        template="sources.html",
-        path="docs/sources.html",
-        type_label="HTML sources",
-        content_count=len(SOURCE_RSS),
-        context={
-            "page_title": PAGE_TITLE,
-            "footer_text": FOOTER_TEXT,
-            "updated_at": formatted_now,
-            "sources": SOURCE_RSS
-        }
-    ),
-    OutputConfig(
-        template="rss.xml",
-        path="docs/rss.xml",
-        type_label="RSS",
-        content_count=len(articles),
-        context={
-            "page_title": PAGE_TITLE,
-            "url": URL,
-            "last_build_date": format_datetime(now),
-            "articles": articles
-        }
-    )
-]
 
+    formatted_now = now.strftime("%d/%m/%Y %H:%M")
+
+    return [
+        OutputConfig(
+            template="homepage.html",
+            path="docs/index.html",
+            type_label="HTML home",
+            content_count=len(articles),
+            context={
+                "page_title": PAGE_TITLE,
+                "footer_text": FOOTER_TEXT,
+                "updated_at": formatted_now,
+                "articles": articles
+            }
+        ),
+        OutputConfig(
+            template="sources.html",
+            path="docs/sources.html",
+            type_label="HTML sources",
+            content_count=len(SOURCE_RSS),
+            context={
+                "page_title": PAGE_TITLE,
+                "footer_text": FOOTER_TEXT,
+                "updated_at": formatted_now,
+                "sources": SOURCE_RSS
+            }
+        ),
+        OutputConfig(
+            template="rss.xml",
+            path="docs/rss.xml",
+            type_label="RSS",
+            content_count=len(articles),
+            context={
+                "page_title": PAGE_TITLE,
+                "url": URL,
+                "last_build_date": format_datetime(now),
+                "articles": articles
+            }
+        )
+    ]
 
 def main():
     now = datetime.now(TIMEZONE)
@@ -410,11 +412,10 @@ def main():
             )
     
             logger.info(
-                "%s created: %s (%d %s)",
+                "%s created: %s (%d items)",
                 output.type_label,
                 output.path,
-                output.content_count,
-                output.type_label
+                output.content_count
             )
     
         except TemplateRenderError:
