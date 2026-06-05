@@ -2,7 +2,6 @@ import feedparser
 import logging
 import requests
 
-from dataclasses import dataclass
 from datetime import datetime, timedelta
 from collections.abc import Iterable, Iterator
 from urllib.parse import urlsplit, urlunsplit
@@ -12,6 +11,7 @@ from email.utils import format_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from domain import Article, FeedSource
 
 from config import (
     SOURCE_RSS,
@@ -52,37 +52,6 @@ SESSION.mount("http://", adapter)
 SESSION.headers.update({
     "User-Agent": USER_AGENT
 })
-
-@dataclass(slots=True)
-class Article:
-    title: str
-    link: str
-    summary: str
-    source: str
-    keyword: str
-    published_at: datetime
-
-    @property
-    def published(self) -> str:
-        return format_datetime(self.published_at)
-
-    @property
-    def published_display(self) -> str:
-        return self.published_at.strftime("%d/%m/%Y %H:%M")
-
-    @property
-    def rss_description(self) -> str:
-        return (
-            f"Keyword: {self.keyword} | "
-            f"Fonte: {self.source}"
-        )
-
-
-@dataclass(frozen=True, slots=True)
-class FeedSource:
-    url: str
-    label: str
-    keyword: str
 
 class TemplateRenderError(Exception):
     pass
