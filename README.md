@@ -38,15 +38,19 @@ I wanted a simpler alternative that:
 ```text
 RSS feeds
     ↓
-GitHub Action (daily)
+GitHub Action (scheduled)
     ↓
-Python aggregation
+config.py (typed configuration bridge)
     ↓
-Deduplication + sorting
+domain models (Article, FeedSource, OutputConfig)
+    ↓
+Python aggregation pipeline (app.py)
+    ↓
+stream processing (filtering, deduplication, sorting)
     ↓
 Jinja template rendering
     ↓
-Static HTML + RSS
+Static HTML + RSS output
     ↓
 GitHub Pages
 ````
@@ -71,6 +75,7 @@ No backend services required.
 ### Memory-Efficient Streaming
 
 Unlike naive scrapers that load all data into memory, this pipeline processes articles as a continuous stream using Python generators (`yield`). This ensures a near-zero memory footprint even when scaling to dozens of high-traffic feeds.
+The pipeline is structured as a domain-driven streaming system using typed models (Article, FeedSource) to ensure consistency across ingestion, processing, and rendering stages.
 
 
 ### Concurrency & High Performance
@@ -208,6 +213,7 @@ docs/static/style.css          → Frontend styling
 
 app.py                         → Aggregation pipeline
 config.py                      → Configuration loader (Python bridge)
+domain.py                      → Domain models (Article, FeedSource, OutputConfig)
 requirements.txt               → Python dependencies
 ```
 
