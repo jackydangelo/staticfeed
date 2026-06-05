@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from datetime import datetime
 from email.utils import format_datetime
+from typing import Any
 
 
 @dataclass(slots=True)
@@ -27,9 +28,16 @@ class Article:
             f"Fonte: {self.source}"
         )
 
-
 @dataclass(frozen=True, slots=True)
 class FeedSource:
     url: str
     label: str
     keyword: str
+
+@dataclass(frozen=True, slots=True)
+class OutputConfig:
+    template: str
+    path: str
+    type_label: str
+    content_count: int
+    context: dict[str, Any]
