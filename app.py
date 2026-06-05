@@ -11,7 +11,7 @@ from email.utils import format_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from domain import Article, FeedSource
+from domain import Article, FeedSource, OutputConfig
 
 from config import (
     SOURCE_RSS,
@@ -334,50 +334,50 @@ def render_template(
 def get_output_configuration(
     now: datetime,
     articles: list[Article]
-) -> list[dict]:
+) -> list[OutputConfig]:
     """
     Defines the supported output formats and their respective Jinja contexts.
     Easily extensible with new formats (e.g., JSON Feed, Sitemap).
     """
     formatted_now = now.strftime("%d/%m/%Y %H:%M")
-    return [
-        {
-            "template": "homepage.html",
-            "path": "docs/index.html",
-            "type_label": "HTML home",
-            "content_count": len(articles),
-            "context": {
-                "page_title": PAGE_TITLE,
-                "footer_text": FOOTER_TEXT,
-                "updated_at": formatted_now,
-                "articles": articles
-            }
-        },
-        {
-            "template": "sources.html",
-            "path": "docs/sources.html",
-            "type_label": "HTML sources",
-            "content_count": len(SOURCE_RSS),
-            "context": {
-                "page_title": PAGE_TITLE,
-                "footer_text": FOOTER_TEXT,
-                "updated_at": formatted_now,
-                "sources": SOURCE_RSS  
-            }
-        },
-        {
-            "template": "rss.xml",
-            "path": "docs/rss.xml",
-            "type_label": "RSS",
-            "content_count": len(articles),
-            "context": {
-                "page_title": PAGE_TITLE,
-                "url": URL,
-                "last_build_date": format_datetime(now),
-                "articles": articles
-            }
+return [
+    OutputConfig(
+        template="homepage.html",
+        path="docs/index.html",
+        type_label="HTML home",
+        content_count=len(articles),
+        context={
+            "page_title": PAGE_TITLE,
+            "footer_text": FOOTER_TEXT,
+            "updated_at": formatted_now,
+            "articles": articles
         }
-    ]
+    ),
+    OutputConfig(
+        template="sources.html",
+        path="docs/sources.html",
+        type_label="HTML sources",
+        content_count=len(SOURCE_RSS),
+        context={
+            "page_title": PAGE_TITLE,
+            "footer_text": FOOTER_TEXT,
+            "updated_at": formatted_now,
+            "sources": SOURCE_RSS
+        }
+    ),
+    OutputConfig(
+        template="rss.xml",
+        path="docs/rss.xml",
+        type_label="RSS",
+        content_count=len(articles),
+        context={
+            "page_title": PAGE_TITLE,
+            "url": URL,
+            "last_build_date": format_datetime(now),
+            "articles": articles
+        }
+    )
+]
 
 
 def main():
@@ -402,12 +402,11 @@ def main():
     outputs = get_output_configuration(now, articles)
 
     for output in outputs:
-        try:
-            render_template(
-                template_name=output["template"],
-                output_path=output["path"],
-                **output["context"]
-            )
+        render_template(
+            template_name=output.template,
+            output_path=output.path,
+            **output.context
+        )
 
             logger.info(
                 "%s created: %s (%d %s)",
