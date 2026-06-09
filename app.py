@@ -1,12 +1,12 @@
 import feedparser
 import logging
-import requests
+import request
+import time
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections.abc import Iterable, Iterator
 from urllib.parse import urlsplit, urlunsplit
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from dateutil.parser import parse as parse_date
 from email.utils import format_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
@@ -66,25 +66,27 @@ def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
 
 def parse_entry_date(entry) -> datetime | None:
     """
-    Extracts a normalized publication datetime from an RSS entry.
+    Extracts a normalized publication datetime from an RSS entry
+    using feedparser's native RFC-compliant parsed time.
 
     Returns None when the entry does not contain a valid or parsable date.
     """
-    raw_date = (
-        getattr(entry, "published", None)
-        or getattr(entry, "updated", None)
+    parsed_struct = (
+        getattr(entry, "published_parsed", None)
+        or getattr(entry, "updated_parsed", None)
     )
 
-    if not raw_date:
+    if not parsed_struct:
         return None
 
     try:
-        return parse_date(raw_date).astimezone(TIMEZONE)
+        timestamp = time.mktime(parsed_struct)
+        dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+        return dt_utc.astimezone(TIMEZONE)
 
-    except (ValueError, TypeError):
+    except (ValueError, TypeError, OverflowError):
         logger.warning(
-            "Invalid date format: %r for entry: %s",
-            raw_date,
+            "Impossible to extract date for: %s",
             getattr(entry, "title", "N/A")
         )
         return None
