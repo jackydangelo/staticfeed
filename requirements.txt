@@ -1,4 +1,3 @@
 feedparser
 jinja2
-python-dateutil
 requests
