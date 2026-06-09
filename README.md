@@ -99,8 +99,7 @@ It handles:
 
 ### Timezone-Aware Sorting
 
-All timestamps are normalized into timezone-aware datetime objects using ```dateutil```, ensuring consistent chronological ordering across heterogeneous RSS and Atom feeds.
-
+All timestamps are normalized into timezone-aware datetime objects using ```feedparser```'s native RFC-compliant time parsing and standard Python libraries. This ensures consistent chronological ordering across heterogeneous RSS and Atom feeds while keeping external dependencies to a strict minimum.
 
 ### Dual Output
 
@@ -227,6 +226,7 @@ The project intentionally prioritizes:
 * inspectability
 * forkability
 * zero maintenance
+* minimal external dependencies (relying on standard Python libraries wherever possible)
 
 
 ### Compatibility with Commercial Readers
