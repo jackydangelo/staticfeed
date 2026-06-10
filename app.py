@@ -1,7 +1,6 @@
 import feedparser
 import logging
 import requests
-import time
 
 from datetime import datetime, timedelta, timezone
 from collections.abc import Iterable, Iterator
@@ -67,10 +66,12 @@ def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
 def parse_entry_date(entry) -> datetime | None:
     """
     Extracts a normalized publication datetime from an RSS entry
-    using feedparser's native RFC-compliant parsed time.
+    using feedparser's parsed time structures.
 
-    Returns None when the entry does not contain a valid or parsable date.
+    Returns None when the entry does not contain a valid or usable date.
     """
+
+    # RSS feeds may provide either "published" or "updated" timestamps
     parsed_struct = (
         getattr(entry, "published_parsed", None)
         or getattr(entry, "updated_parsed", None)
@@ -80,11 +81,20 @@ def parse_entry_date(entry) -> datetime | None:
         return None
 
     try:
-        timestamp = time.mktime(parsed_struct)
-        dt_utc = datetime.fromtimestamp(timestamp, tz=timezone.utc)
-        return dt_utc.astimezone(TIMEZONE)
+        # This avoids local timezone ambiguity and ensures consistent comparison
+        dt = datetime(
+            parsed_struct.tm_year,
+            parsed_struct.tm_mon,
+            parsed_struct.tm_mday,
+            parsed_struct.tm_hour,
+            parsed_struct.tm_min,
+            parsed_struct.tm_sec,
+            tzinfo=timezone.utc
+        )
 
-    except (ValueError, TypeError, OverflowError):
+        return dt.astimezone(TIMEZONE)
+
+    except (ValueError, TypeError):
         logger.warning(
             "Impossible to extract date for: %s",
             getattr(entry, "title", "N/A")
