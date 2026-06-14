@@ -33,14 +33,9 @@
       "keyword": "gamified"
     },
     {
-      "url": "https://news.google.com/rss/search?q=gamificata&hl=it&gl=IT&ceid=IT:it",
+      "url": "https://news.google.com/rss/search?q=%22gamificata%22+OR+%22gamificato%22&hl=it&gl=IT&ceid=IT:it",
       "label": "Google News Italia",
-      "keyword": "gamificata"
-    },
-    {
-      "url": "https://news.google.com/rss/search?q=gamificato&hl=it&gl=IT&ceid=IT:it",
-      "label": "Google News Italia",
-      "keyword": "gamificato"
+      "keyword": "gamificata OR gamificato"
     },
     {
       "url": "https://www.reddit.com/search.rss?q=gamification",
