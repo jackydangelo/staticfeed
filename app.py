@@ -470,8 +470,8 @@ def main():
                 "%s template rendering failed",
                 output.type_label
             )
-    finally:
-        save_cache(CACHE)
+        finally:
+            save_cache(CACHE)
 
 if __name__ == "__main__":
     main()
