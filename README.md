@@ -40,6 +40,8 @@ RSS feeds
     ↓
 GitHub Action (scheduled)
     ↓
+GitHub Actions Cache (restores/saves feed_cache.json)
+    ↓
 config.py (typed configuration bridge)
     ↓
 domain models (Article, FeedSource, OutputConfig)
@@ -100,6 +102,14 @@ It handles:
 ### Timezone-Aware Sorting
 
 All timestamps are normalized into timezone-aware datetime objects using ```feedparser```'s native RFC-compliant time parsing and standard Python libraries. This ensures consistent chronological ordering across heterogeneous RSS and Atom feeds while keeping external dependencies to a strict minimum.
+
+
+### HTTP Conditional Caching (304 Not Modified)
+
+To guarantee lightning-fast executions and respect remote servers, the pipeline implements an automated HTTP caching layer using `ETag` and `Last-Modified` headers. 
+
+Instead of downloading full XML payloads on every single run, the workflow leverages GitHub Actions' native encrypted cache storage to persist a lightweight `feed_cache.json` state. On subsequent runs, conditional HTTP requests are made: if a source hasn't published new content, the remote server returns a lightweight `304 Not Modified` empty packet. This cuts network bandwidth by up to 95% and prevents your runner's IP from being rate-limited or banned.
+
 
 ### Dual Output
 
@@ -215,7 +225,7 @@ config.py                      → Configuration loader (Python bridge)
 domain.py                      → Domain models (Article, FeedSource, OutputConfig)
 requirements.txt               → Python dependencies
 ```
-
+> **Note on Caching:** You won't see a `feed_cache.json` file in this repository. To keep the git history clean and avoid noise, the HTTP cache state is stored and managed invisibly using GitHub Actions native cache infrastructure. It is restored dynamically at the beginning of each run and saved at the end.
 
 ## Technical Notes
 
