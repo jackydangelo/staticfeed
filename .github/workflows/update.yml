@@ -2,7 +2,7 @@ name: Update RSS HTML
 
 on:
   schedule:
-   - cron: "0 7 * * *"
+    - cron: "0 7 * * *"
 
   workflow_dispatch:
 
@@ -25,6 +25,17 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
+
+      - name: Cache RSS Feed Data
+        uses: actions/cache@v4
+        with:
+          path: feed_cache.json
+          # Usa l'hash di config.py (se cambi i feed la cache si resetta) e l'ID del run corrente
+          key: rss-cache-${{ hashFiles('config.py') }}-${{ github.run_id }}
+          # Se non c'è una cache esatta per questo run, ripristina l'ultima disponibile per questa configurazione
+          restore-keys: |
+            rss-cache-${{ hashFiles('config.py') }}-
+            rss-cache-
 
       - name: Generate HTML
         run: |
