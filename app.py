@@ -35,7 +35,7 @@ ENV = Environment(
 
 CACHE_FILE = "feed_cache.json"
 
-CACHE: dict = load_cache()
+CACHE: dict = {}
 
 logging.basicConfig(
     level=logging.INFO,
@@ -430,6 +430,10 @@ def get_output_configuration(
     ]
 
 def main():
+    global CACHE
+
+    CACHE = load_cache()
+    
     now = datetime.now(TIMEZONE)
 
     cutoff_date = get_cutoff_date(
