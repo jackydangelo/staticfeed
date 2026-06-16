@@ -10,6 +10,7 @@ from email.utils import format_datetime
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from feedparser import FeedParserDict
 from domain import Article, FeedSource, OutputConfig
 
 from config import (
@@ -63,7 +64,7 @@ def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
     return now - timedelta(days=days_limit)
 
 
-def parse_entry_date(entry) -> datetime | None:
+def parse_entry_date(entry: FeedParserDict) -> datetime | None:
     """
     Extracts a normalized publication datetime from an RSS entry
     using feedparser's parsed time structures.
@@ -204,7 +205,7 @@ def process_source(source_info: FeedSource) -> list[Article]:
 
 
 def build_article(
-    entry,
+    entry: FeedParserDict,
     source: str,
     keyword: str
 ) -> Article | None:
