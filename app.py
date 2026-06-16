@@ -35,6 +35,8 @@ ENV = Environment(
 
 CACHE_FILE = "feed_cache.json"
 
+CACHE: dict = load_cache()
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
@@ -143,8 +145,7 @@ def fetch_feed(feed_url: str):
     Returns an empty list if the feed is not modified, cannot be fetched, or is empty.
     """
     # 1. Load the current cache
-    cache = load_cache()
-    feed_cache = cache.get(feed_url, {})
+    feed_cache = CACHE.get(feed_url, {})
 
     # 2. Set up conditional headers
     headers = {}
@@ -163,7 +164,7 @@ def fetch_feed(feed_url: str):
 
         # 3. Handling of 304 Not Modified
         if response.status_code == 304:
-            logger.info("Feed non modificato (304): %s", feed_url)
+            logger.info("Unmodified feed (304): %s", feed_url)
             return []  
 
         response.raise_for_status()
@@ -191,11 +192,10 @@ def fetch_feed(feed_url: str):
     new_last_modified = response.headers.get("Last-Modified")
 
     if new_etag or new_last_modified:
-        cache[feed_url] = {
+        CACHE[feed_url] = {
             "etag": new_etag,
             "last_modified": new_last_modified
         }
-        save_cache(cache)
 
     return entries
 
@@ -470,7 +470,8 @@ def main():
                 "%s template rendering failed",
                 output.type_label
             )
-
+    finally:
+        save_cache(CACHE)
 
 if __name__ == "__main__":
     main()
