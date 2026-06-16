@@ -191,14 +191,12 @@ def process_source(source_info: FeedSource) -> list[Article]:
             source_info.label,
             source_info.keyword
         )
-
-    except Exception as exc:
+        
+    except Exception:
         # Prevent a single failing feed from breaking the entire orchestration loop.
-        logger.error(
-            "Unexpected error processing source %s: %s", 
-            source_info.label, 
-            exc, 
-            exc_info=True
+        logger.exception(
+            "Unexpected error processing source %s",
+            source_info.label
         )
         return []
 
@@ -330,17 +328,17 @@ def render_template(
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
 
-    except FileNotFoundError as e:
+    except FileNotFoundError as exc:
         logger.exception("Template not found: %s", template_name)
-        raise TemplateRenderError("Missing template") from e
+        raise TemplateRenderError("Missing template") from exc
 
-    except OSError as e:
+    except OSError as exc:
         logger.exception("File write error: %s", output_path)
-        raise TemplateRenderError("Cannot write output file") from e
+        raise TemplateRenderError("Cannot write output file") from exc
 
-    except Exception as e:
+    except Exception as exc:
         logger.exception("Unexpected render error")
-        raise TemplateRenderError("Render failed") from e
+        raise TemplateRenderError("Render failed") from exc
 
 
 def get_output_configuration(
