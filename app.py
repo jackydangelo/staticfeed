@@ -1,6 +1,8 @@
 import feedparser
 import logging
 import requests
+import json
+import os
 
 from datetime import datetime, timedelta, timezone
 from collections.abc import Iterable, Iterator
@@ -31,6 +33,8 @@ ENV = Environment(
     autoescape=select_autoescape(["html", "xml", "xhtml"])
 )
 
+CACHE_FILE = "feed_cache.json"
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s"
@@ -56,6 +60,21 @@ SESSION.headers.update({
 class TemplateRenderError(Exception):
     pass
 
+def load_cache() -> dict:
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            logger.warning("Unable to read the cache file; I'll create a new one.")
+    return {}
+
+def save_cache(cache_data: dict) -> None:
+    try:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache_data, f, indent=4)
+    except Exception:
+        logger.exception("Unable to save the cache file.")
 
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
     """
@@ -120,46 +139,63 @@ def normalize_url(url: str) -> str:
 
 def fetch_feed(feed_url: str):
     """
-    Retrieves RSS entries from a remote feed source.
-
-    Returns an empty list if the feed cannot be fetched or parsed.
+    Retrieves RSS entries from a remote feed source, leveraging HTTP caching (304 Not Modified).
+    Returns an empty list if the feed is not modified, cannot be fetched, or is empty.
     """
+    # 1. Load the current cache
+    cache = load_cache()
+    feed_cache = cache.get(feed_url, {})
+
+    # 2. Set up conditional headers
+    headers = {}
+    if "etag" in feed_cache:
+        headers["If-None-Match"] = feed_cache["etag"]
+    if "last_modified" in feed_cache:
+        headers["If-Modified-Since"] = feed_cache["last_modified"]
 
     try:
+        # Send the request including the cache headers (if any)
         response = SESSION.get(
             feed_url,
-            timeout=REQUEST_TIMEOUT
+            timeout=REQUEST_TIMEOUT,
+            headers=headers
         )
+
+        # 3. Handling of 304 Not Modified
+        if response.status_code == 304:
+            logger.info("Feed non modificato (304): %s", feed_url)
+            return []  
 
         response.raise_for_status()
 
-        feed = feedparser.parse(
-            response.content
-        )
+        # 4. Handling new data
+        feed = feedparser.parse(response.content)
 
     except requests.RequestException as exc:
-        logger.exception(
-            "Failed to download feed: %s (%s)",
-            feed_url,
-            exc
-        )
+        if hasattr(exc.response, 'status_code') and exc.response.status_code == 304:
+            return []
+            
+        logger.exception("Failed to download feed: %s (%s)", feed_url, exc)
         return []
 
     if feed.bozo:
-        logger.warning(
-            "Malformed feed: %s (%s)",
-            feed_url,
-            feed.bozo_exception
-        )
+        logger.warning("Malformed feed: %s (%s)", feed_url, feed.bozo_exception)
 
     entries = getattr(feed, "entries", None)
-
     if not entries:
-        logger.warning(
-            "Empty feed: %s",
-            feed_url
-        )
+        logger.warning("Empty feed: %s", feed_url)
         return []
+
+    # 5. Save the new cache data provided by the server for the next run
+    new_etag = response.headers.get("ETag")
+    new_last_modified = response.headers.get("Last-Modified")
+
+    if new_etag or new_last_modified:
+        cache[feed_url] = {
+            "etag": new_etag,
+            "last_modified": new_last_modified
+        }
+        save_cache(cache)
 
     return entries
 
