@@ -13,6 +13,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from feedparser import FeedParserDict
+from threading import Lock
 from domain import Article, FeedSource, OutputConfig
 
 from config import (
@@ -36,6 +37,7 @@ ENV = Environment(
 CACHE_FILE = "feed_cache.json"
 
 CACHE: dict = {}
+CACHE_LOCK = Lock()
 
 logging.basicConfig(
     level=logging.INFO,
@@ -145,7 +147,8 @@ def fetch_feed(feed_url: str):
     Returns an empty list if the feed is not modified, cannot be fetched, or is empty.
     """
     # 1. Load the current cache
-    feed_cache = CACHE.get(feed_url, {})
+    with CACHE_LOCK:
+        feed_cache = CACHE.get(feed_url, {}).copy()
 
     # 2. Set up conditional headers
     headers = {}
@@ -190,12 +193,13 @@ def fetch_feed(feed_url: str):
     # 5. Save the new cache data provided by the server for the next run
     new_etag = response.headers.get("ETag")
     new_last_modified = response.headers.get("Last-Modified")
-
+    
     if new_etag or new_last_modified:
-        CACHE[feed_url] = {
-            "etag": new_etag,
-            "last_modified": new_last_modified
-        }
+        with CACHE_LOCK:
+            CACHE[feed_url] = {
+                "etag": new_etag,
+                "last_modified": new_last_modified
+            }
 
     return entries
 
@@ -474,8 +478,7 @@ def main():
                 "%s template rendering failed",
                 output.type_label
             )
-        finally:
-            save_cache(CACHE)
+    save_cache(CACHE)
 
 if __name__ == "__main__":
     main()
