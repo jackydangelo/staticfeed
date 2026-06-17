@@ -80,6 +80,24 @@ def save_cache(cache_data: dict) -> None:
     except Exception:
         logger.exception("Unable to save the cache file.")
 
+def clean_cache(raw_cache: dict, active_sources: list[FeedSource]) -> dict:
+    """
+    Removes cached HTTP metadata for sources that are no longer active
+    to prevent the cache file from growing indefinitely.
+    """
+    active_urls = {source.url for source in active_sources}
+    
+    cleaned_cache = {
+        url: data for url, data in raw_cache.items() 
+        if url in active_urls
+    }
+    
+    removed_count = len(raw_cache) - len(cleaned_cache)
+    if removed_count > 0:
+        logger.info("Cache cleanup: removed %d obsolete sources", removed_count)
+        
+    return cleaned_cache
+
 def get_cutoff_date(now: datetime, days_limit: int) -> datetime:
     """
     Computes the lower bound timestamp used to filter outdated articles.
@@ -436,7 +454,9 @@ def get_output_configuration(
 def main():
     global CACHE
 
-    CACHE = load_cache()
+    # 0. Setup cache and cutoff date
+    raw_cache = load_cache()
+    CACHE = clean_cache(raw_cache, SOURCE_RSS)
     
     now = datetime.now(TIMEZONE)
 
