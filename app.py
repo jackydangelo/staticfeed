@@ -36,7 +36,7 @@ ENV = Environment(
 
 CACHE_FILE = "feed_cache.json"
 
-CACHE: dict = {}
+CACHE: dict[str, dict[str, str | None]] = {}
 CACHE_LOCK = Lock()
 
 logging.basicConfig(
@@ -159,67 +159,139 @@ def normalize_url(url: str) -> str:
     ))
 
 
-def fetch_feed(feed_url: str):
+def build_cache_headers(feed_url: str) -> dict[str, str]:
     """
-    Retrieves RSS entries from a remote feed source, leveraging HTTP caching (304 Not Modified).
-    Returns an empty list if the feed is not modified, cannot be fetched, or is empty.
+    Builds conditional HTTP headers from cached feed metadata.
+
+    Enables efficient feed retrieval through ETag and
+    Last-Modified validation.
     """
-    # 1. Load the current cache
     with CACHE_LOCK:
-        feed_cache = CACHE.get(feed_url, {}).copy()
+        cache_entry = CACHE.get(feed_url, {})
 
-    # 2. Set up conditional headers
-    headers = {}
-    if "etag" in feed_cache:
-        headers["If-None-Match"] = feed_cache["etag"]
-    if "last_modified" in feed_cache:
-        headers["If-Modified-Since"] = feed_cache["last_modified"]
+    headers: dict[str, str] = {}
 
+    if etag := cache_entry.get("etag"):
+        headers["If-None-Match"] = etag
+
+    if last_modified := cache_entry.get("last_modified"):
+        headers["If-Modified-Since"] = last_modified
+
+    return headers
+
+
+def update_feed_cache(
+    feed_url: str,
+    response: requests.Response
+) -> None:
+    """
+    Stores HTTP cache metadata returned by a feed source.
+
+    The cached values are used in subsequent requests
+    to support conditional GET operations.
+    """
+    etag = response.headers.get("ETag")
+    last_modified = response.headers.get("Last-Modified")
+
+    if not (etag or last_modified):
+        return
+
+    with CACHE_LOCK:
+        CACHE[feed_url] = {
+            "etag": etag,
+            "last_modified": last_modified
+        }
+
+
+def download_feed(feed_url: str) -> bytes | None:
+    """
+    Downloads raw RSS content from a feed source.
+
+    Returns None when the feed is not modified,
+    unavailable, or cannot be retrieved successfully.
+    """
     try:
-        # Send the request including the cache headers (if any)
+        # 1. Perform a conditional HTTP request using cached metadata
         response = SESSION.get(
             feed_url,
             timeout=REQUEST_TIMEOUT,
-            headers=headers
+            headers=build_cache_headers(feed_url)
         )
 
-        # 3. Handling of 304 Not Modified
+        # 2. Skip processing if the feed has not changed
         if response.status_code == 304:
-            logger.info("Unmodified feed (304): %s", feed_url)
-            return []  
+            logger.info(
+                "Unmodified feed (304): %s",
+                feed_url
+            )
+            return None
 
         response.raise_for_status()
 
-        # 4. Handling new data
-        feed = feedparser.parse(response.content)
+        # 3. Persist fresh cache metadata for future requests
+        update_feed_cache(feed_url, response)
 
-    except requests.RequestException as exc:
-        if hasattr(exc.response, 'status_code') and exc.response.status_code == 304:
-            return []
-            
-        logger.exception("Failed to download feed: %s (%s)", feed_url, exc)
-        return []
+        # 4. Return the raw feed payload
+        return response.content
+
+    except requests.RequestException:
+        logger.exception(
+            "Failed to download feed: %s",
+            feed_url
+        )
+        return None
+
+
+def parse_feed_content(
+    feed_url: str,
+    content: bytes
+) -> list[FeedParserDict]:
+    """
+    Parses raw RSS content and extracts feed entries.
+
+    Returns an empty list when the feed is malformed
+    or does not contain any usable entries.
+    """
+    feed = feedparser.parse(content)
 
     if feed.bozo:
-        logger.warning("Malformed feed: %s (%s)", feed_url, feed.bozo_exception)
+        logger.warning(
+            "Malformed feed: %s (%s)",
+            feed_url,
+            feed.bozo_exception
+        )
 
-    entries = getattr(feed, "entries", None)
+    entries = feed.entries
+
     if not entries:
-        logger.warning("Empty feed: %s", feed_url)
+        logger.warning(
+            "Empty feed: %s",
+            feed_url
+        )
         return []
 
-    # 5. Save the new cache data provided by the server for the next run
-    new_etag = response.headers.get("ETag")
-    new_last_modified = response.headers.get("Last-Modified")
-    
-    if new_etag or new_last_modified:
-        with CACHE_LOCK:
-            CACHE[feed_url] = {
-                "etag": new_etag,
-                "last_modified": new_last_modified
-            }
-
     return entries
+
+
+def fetch_feed(feed_url: str) -> list[FeedParserDict]:
+    """
+    Retrieves and parses entries from a remote RSS source.
+
+    Combines HTTP retrieval, cache validation, and feed parsing
+    behind a single high-level interface.
+    """
+
+    # 1. Download the feed content
+    content = download_feed(feed_url)
+
+    if content is None:
+        return []
+
+    # 2. Parse and return feed entries
+    return parse_feed_content(
+        feed_url,
+        content
+    )
 
 def process_source(source_info: FeedSource) -> list[Article]:
     """
