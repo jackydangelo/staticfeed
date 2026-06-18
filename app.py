@@ -74,12 +74,14 @@ def load_cache() -> dict:
     return {}
 
 def save_cache(cache_data: dict) -> None:
+    with CACHE_LOCK:
+        snapshot = dict(cache_data) 
     try:
         with open(CACHE_FILE, "w", encoding="utf-8") as f:
-            json.dump(cache_data, f, indent=4)
+            json.dump(snapshot, f, indent=4)
     except Exception:
         logger.exception("Unable to save the cache file.")
-
+        
 def clean_cache(raw_cache: dict, active_sources: list[FeedSource]) -> dict:
     """
     Removes cached HTTP metadata for sources that are no longer active
@@ -159,15 +161,14 @@ def normalize_url(url: str) -> str:
     ))
 
 
-def build_cache_headers(feed_url: str) -> dict[str, str]:
+def build_cache_headers(feed_url: str, cache: dict) -> dict[str, str]:
     """
     Builds conditional HTTP headers from cached feed metadata.
 
     Enables efficient feed retrieval through ETag and
     Last-Modified validation.
     """
-    with CACHE_LOCK:
-        cache_entry = CACHE.get(feed_url, {})
+    cache_entry = CACHE.get(feed_url, {})
 
     headers: dict[str, str] = {}
 
@@ -182,7 +183,8 @@ def build_cache_headers(feed_url: str) -> dict[str, str]:
 
 def update_feed_cache(
     feed_url: str,
-    response: requests.Response
+    response: requests.Response,
+    cache: dict
 ) -> None:
     """
     Stores HTTP cache metadata returned by a feed source.
@@ -453,8 +455,9 @@ def render_template(
     """
     try:
         template = ENV.get_template(template_name)
-
         content = template.render(**context)
+
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
         with open(output_path, "w", encoding="utf-8") as f:
             f.write(content)
@@ -524,7 +527,6 @@ def get_output_configuration(
     ]
 
 def main():
-    global CACHE
 
     # 0. Setup cache and cutoff date
     raw_cache = load_cache()
