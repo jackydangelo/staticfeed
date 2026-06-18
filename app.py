@@ -217,7 +217,7 @@ def download_feed(feed_url: str) -> bytes | None:
         response = SESSION.get(
             feed_url,
             timeout=REQUEST_TIMEOUT,
-            headers=build_cache_headers(feed_url)
+            headers=build_cache_headers(feed_url, cache)
         )
 
         # 2. Skip processing if the feed has not changed
@@ -284,7 +284,7 @@ def fetch_feed(feed_url: str) -> list[FeedParserDict]:
     """
 
     # 1. Download the feed content
-    content = download_feed(feed_url)
+    content = download_feed(feed_url, cache)
 
     if content is None:
         return []
@@ -307,7 +307,7 @@ def process_source(source_info: FeedSource) -> list[Article]:
     articles: list[Article] = []
 
     try:
-        entries = fetch_feed(source_info.url)
+        entries = fetch_feed(source_info.url, cache)
         
         for entry in entries:
             article = build_article(
