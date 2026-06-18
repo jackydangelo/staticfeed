@@ -293,7 +293,7 @@ def fetch_feed(feed_url: str, cache: dict) -> list[FeedParserDict]:
         content
     )
 
-def process_source(source_info: FeedSource) -> list[Article]:
+def process_source(source_info: FeedSource, cache: dict) -> list[Article]:
     """
     Download and normalize all articles from a single RSS feed.
     """
@@ -366,7 +366,7 @@ def build_article(
     )
 
 
-def stream_raw_articles() -> Iterator[Article]:
+def stream_raw_articles(cache: dict) -> Iterator[Article]:
     """
     Retrieves and normalizes RSS entries concurrently with safe error handling.
     """
@@ -378,7 +378,7 @@ def stream_raw_articles() -> Iterator[Article]:
     ) as executor:
 
         futures = {
-            executor.submit(process_source, source_info): source_info
+            executor.submit(process_source, source_info, cache): source_info
             for source_info in SOURCE_RSS
         }
 
@@ -421,7 +421,7 @@ def filter_duplicates(
             yield article
 
 
-def collect_articles(cutoff_date: datetime) -> list[Article]:
+def collect_articles(cutoff_date: datetime, cache: dict) -> list[Article]:
     """
     Produces the unified article dataset used by all output formats.
 
@@ -429,7 +429,7 @@ def collect_articles(cutoff_date: datetime) -> list[Article]:
     """
     seen: set[str] = set()
 
-    raw_stream = stream_raw_articles()
+    raw_stream = stream_raw_articles(cache)
     filtered_by_date = filter_by_date(raw_stream, cutoff_date)
     final_stream = filter_duplicates(filtered_by_date, seen)
 
@@ -570,7 +570,7 @@ def main():
                 "%s template rendering failed",
                 output.type_label
             )
-    save_cache(CACHE)
+    save_cache(cache)
 
 if __name__ == "__main__":
     main()
