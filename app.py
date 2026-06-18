@@ -538,7 +538,7 @@ def main():
     )
 
     # 1. Ingestion and normalization (Stream-based pipeline)
-    articles = collect_articles(cutoff_date)
+    articles = collect_articles(cutoff_date, cache)
     num_articles = len(articles)
 
     logger.info(
