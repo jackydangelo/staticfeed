@@ -35,8 +35,6 @@ ENV = Environment(
 )
 
 CACHE_FILE = "feed_cache.json"
-
-CACHE: dict[str, dict[str, str | None]] = {}
 CACHE_LOCK = Lock()
 
 logging.basicConfig(
@@ -168,7 +166,7 @@ def build_cache_headers(feed_url: str, cache: dict) -> dict[str, str]:
     Enables efficient feed retrieval through ETag and
     Last-Modified validation.
     """
-    cache_entry = CACHE.get(feed_url, {})
+    cache_entry = cache.get(feed_url, {})
 
     headers: dict[str, str] = {}
 
@@ -199,13 +197,13 @@ def update_feed_cache(
         return
 
     with CACHE_LOCK:
-        CACHE[feed_url] = {
+        cache[feed_url] = {
             "etag": etag,
             "last_modified": last_modified
         }
 
 
-def download_feed(feed_url: str) -> bytes | None:
+def download_feed(feed_url: str, cache: dict) -> bytes | None:
     """
     Downloads raw RSS content from a feed source.
 
@@ -231,7 +229,7 @@ def download_feed(feed_url: str) -> bytes | None:
         response.raise_for_status()
 
         # 3. Persist fresh cache metadata for future requests
-        update_feed_cache(feed_url, response)
+        update_feed_cache(feed_url, response, cache)
 
         # 4. Return the raw feed payload
         return response.content
@@ -275,7 +273,7 @@ def parse_feed_content(
     return entries
 
 
-def fetch_feed(feed_url: str) -> list[FeedParserDict]:
+def fetch_feed(feed_url: str, cache: dict) -> list[FeedParserDict]:
     """
     Retrieves and parses entries from a remote RSS source.
 
@@ -530,7 +528,7 @@ def main():
 
     # 0. Setup cache and cutoff date
     raw_cache = load_cache()
-    CACHE = clean_cache(raw_cache, SOURCE_RSS)
+    cache = clean_cache(raw_cache, SOURCE_RSS)
     
     now = datetime.now(TIMEZONE)
 
