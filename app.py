@@ -166,7 +166,8 @@ def build_cache_headers(feed_url: str, cache: dict) -> dict[str, str]:
     Enables efficient feed retrieval through ETag and
     Last-Modified validation.
     """
-    cache_entry = cache.get(feed_url, {})
+    with CACHE_LOCK:
+        cache_entry = cache.get(feed_url, {}).copy()
 
     headers: dict[str, str] = {}
 
