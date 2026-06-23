@@ -255,7 +255,6 @@ This allows you to use `StaticFeed` as a lightweight, zero-cost "pre-processing 
 | gamification | https://news.google.com/rss/search?q=gamification&hl=it&gl=IT&ceid=IT:it | Google news Italia | 
 | gamified | https://news.google.com/rss/search?q=gamified | Google news | 
 | gamificata OR gamificato | https://news.google.com/rss/search?q=%22gamificata%22+OR+%22gamificato%22&hl=it&gl=IT&ceid=IT:it | Google news Italia | 
-| gamificato |  https://news.google.com/rss/search?q=gamificato&hl=it&gl=IT&ceid=IT:it | Google news Italia | 
 | gamification |  https://www.reddit.com/search.rss?q=gamification | Reddit |
 | gamification |  https://hnrss.org/newest?q=gamification | Hacker News |
 
