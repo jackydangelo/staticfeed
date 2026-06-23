@@ -16,16 +16,9 @@ The current demo tracks gamification-related news, but the repository is intenti
 
 ## Why This Exists
 
-Most RSS readers and monitoring platforms lock useful features behind expensive plans:
+Many RSS aggregation and monitoring solutions rely on hosted infrastructure or paid plans for advanced features such as feed merging, filtering, and monitoring.
 
-- keyword tracking
-- multi-source aggregation
-- feed merging
-- filtering
-- deduplication
-- custom pipelines
-
-I wanted a simpler alternative that:
+The goal of this project is to provide an alternative that:
 
 - runs entirely on the GitHub free tier
 - requires zero infrastructure maintenance
@@ -76,15 +69,15 @@ No backend services required.
 
 ### Memory-Efficient Streaming
 
-Unlike naive scrapers that load all data into memory, this pipeline processes articles as a continuous stream using Python generators (`yield`). This ensures a near-zero memory footprint even when scaling to dozens of high-traffic feeds.
+Unlike naive scrapers that load all data into memory, this pipeline processes articles as a continuous stream using Python generators (`yield`). This reduces intermediate memory usage by processing articles through a generator-based pipeline before final collection and rendering.
 The pipeline is structured as a domain-driven streaming system using typed models (Article, FeedSource) to ensure consistency across ingestion, processing, and rendering stages.
 
 
 ### Concurrency & High Performance
 
-The pipeline utilizes Python's `ThreadPoolExecutor` to fetch and process multiple RSS feeds concurrently. Since network requests are highly I/O-bound, this architecture bypasses Python's Global Interpreter Lock (GIL) limitations. 
+The pipeline utilizes Python's `ThreadPoolExecutor` to fetch and process multiple RSS feeds concurrently. Since feed retrieval is primarily I/O-bound, concurrent requests can significantly improve throughput despite the presence of Python's GIL.
 
-Instead of waiting for each feed to download sequentially, dozens of remote sources are queried in parallel within seconds. Additionally, the worker pool size dynamically auto-tunes based on your source count to prevent resource wasting or accidental rate-limiting.
+Instead of waiting for each feed to download sequentially, multiple remote sources are fetched concurrently to reduce overall execution time. Additionally, the worker pool size dynamically auto-tunes based on your source count to prevent resource wasting or accidental rate-limiting.
 
 
 ### Smart Deduplication
@@ -106,9 +99,9 @@ All timestamps are normalized into timezone-aware datetime objects using ```feed
 
 ### HTTP Conditional Caching (304 Not Modified)
 
-To guarantee lightning-fast executions and respect remote servers, the pipeline implements an automated HTTP caching layer using `ETag` and `Last-Modified` headers. 
+To reduce unnecessary network traffic and avoid repeatedly downloading unchanged feeds, the pipeline implements an automated HTTP caching layer using `ETag` and `Last-Modified` headers. 
 
-Instead of downloading full XML payloads on every single run, the workflow leverages GitHub Actions' native encrypted cache storage to persist a lightweight `feed_cache.json` state. On subsequent runs, conditional HTTP requests are made: if a source hasn't published new content, the remote server returns a lightweight `304 Not Modified` empty packet. This cuts network bandwidth by up to 95% and prevents your runner's IP from being rate-limited or banned.
+Instead of downloading full XML payloads on every single run, the workflow leverages GitHub Actions' native encrypted cache storage to persist a lightweight `feed_cache.json` state. On subsequent runs, conditional HTTP requests are made: if a source hasn't published new content, the remote server returns a lightweight `304 Not Modified` empty packet. This can substantially reduce bandwidth usage when feeds support conditional HTTP requests and reduces the number of requests sent to upstream feed providers.
 
 
 ### Dual Output
