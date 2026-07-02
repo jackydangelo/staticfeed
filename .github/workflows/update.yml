@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -27,7 +27,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Cache RSS Feed Data
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: feed_cache.json
           # Usa l'hash di config.py (se cambi i feed la cache si resetta) e l'ID del run corrente
